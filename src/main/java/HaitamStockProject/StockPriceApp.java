@@ -1,4 +1,6 @@
-import Services.StockService;
+package HaitamStockProject;
+
+import HaitamStockProject.Services.StockService;
 import com.google.inject.Inject;
 import javafx.geometry.Insets;
 import javafx.scene.chart.CategoryAxis;
@@ -11,10 +13,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.time.LocalDate;
 import java.time.Instant;
 import java.time.ZoneId;

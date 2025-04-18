@@ -1,16 +1,17 @@
-import Services.StockService;
+package HaitamStockProject;
+
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class Main extends Application {
 
-    private static final String API_KEY = "dqHpjXO1Lvm1CI56Vpp8DTcmJi6g8PIX";
-
     @Override
     public void start(Stage primaryStage) {
-        StockService stockService = new StockService(API_KEY);
-        StockPriceApp stockPriceApp = new StockPriceApp(stockService);
+        Injector injector = Guice.createInjector(new AppModule());
+        StockPriceApp stockPriceApp = injector.getInstance(StockPriceApp.class);
 
         Scene scene = new Scene(stockPriceApp.getRoot(), 400, 250);
 
