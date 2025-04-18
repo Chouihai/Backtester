@@ -1,5 +1,7 @@
 package Services;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -12,7 +14,8 @@ public class StockService {
 
     private final String apiKey;
 
-    public StockService(String apiKey) {
+    @Inject
+    public StockService(@Named("api.key") String apiKey) {
         this.apiKey = apiKey;
     }
 

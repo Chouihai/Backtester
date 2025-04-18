@@ -1,4 +1,5 @@
 import Services.StockService;
+import com.google.inject.Inject;
 import javafx.geometry.Insets;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
@@ -28,7 +29,7 @@ public class StockPriceApp {
     private XYChart.Series<String, Number> priceSeries;
     private final StockService stockService;
 
-
+    @Inject
     public StockPriceApp(StockService stockService) {
         this.stockService = stockService;
         setupUI();
