@@ -9,36 +9,27 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
-public class StockPriceAPp {
-
-    private static final String API_KEY = "dqHpjXO1Lvm1CI56Vpp8DTcmJi6g8PIX";
-
-}
+import org.json.JSONObject;
 
 public class StockPriceApp {
 
-    private static final String API_KEY = "YOUR_API_KEY_HERE";
+    private static final String API_KEY = "dqHpjXO1Lvm1CI56Vpp8DTcmJi6g8PIX";
 
     private VBox root;
-    private TextField tickerField;
-    private DatePicker datePicker;
-    private Button searchButton;
-    private Label resultLabel;
 
     public StockPriceApp() {
         setupUI();
     }
 
     private void setupUI() {
-        tickerField = new TextField();
+        TextField tickerField = new TextField();
         tickerField.setPromptText("Enter Ticker Symbol (e.g., AAPL)");
 
-        datePicker = new DatePicker();
+        DatePicker datePicker = new DatePicker();
 
-        searchButton = new Button("Search");
+        Button searchButton = new Button("Search");
 
-        resultLabel = new Label();
+        Label resultLabel = new Label();
 
         searchButton.setOnAction(event -> {
             String ticker = tickerField.getText().trim().toUpperCase();
