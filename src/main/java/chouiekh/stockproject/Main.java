@@ -1,4 +1,4 @@
-package HaitamStockProject;
+package chouiekh.stockproject;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;

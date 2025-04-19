@@ -1,4 +1,4 @@
-package HaitamStockProject.objects;
+package chouiekh.stockproject.objects;
 
 import java.time.LocalDateTime;
 

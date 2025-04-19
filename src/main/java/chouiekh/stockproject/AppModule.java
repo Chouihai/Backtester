@@ -1,5 +1,7 @@
-package HaitamStockProject;
+package chouiekh.stockproject;
 
+import chouiekh.stockproject.respositories.DefaultSecurityDBAccess;
+import chouiekh.stockproject.respositories.SecurityDBAccess;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 
@@ -22,5 +24,6 @@ public class AppModule extends AbstractModule {
         }
 
         Names.bindProperties(binder(), properties);
+        bind(SecurityDBAccess.class).to(DefaultSecurityDBAccess.class);
     }
 }

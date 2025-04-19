@@ -1,4 +1,4 @@
-package HaitamStockProject.services;
+package chouiekh.stockproject.services;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;

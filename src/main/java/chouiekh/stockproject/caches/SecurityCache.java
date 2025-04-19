@@ -1,7 +1,7 @@
-package HaitamStockProject.caches;
+package chouiekh.stockproject.caches;
 
-import HaitamStockProject.objects.Security;
-import HaitamStockProject.respositories.SecurityRepository;
+import chouiekh.stockproject.objects.Security;
+import chouiekh.stockproject.respositories.SecurityDBAccess;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -13,16 +13,16 @@ public class SecurityCache {
 
     private final Map<Integer, Security> securitiesById = new ConcurrentHashMap<>();
     private final Map<String, Security> securitiesBySymbol = new ConcurrentHashMap<>();
-    private final SecurityRepository securityRepository;
+    private final SecurityDBAccess securityDBAccess;
 
     @Inject
-    public SecurityCache(SecurityRepository securityRepository) {
-        this.securityRepository = securityRepository;
+    public SecurityCache(SecurityDBAccess securityDBAccess) {
+        this.securityDBAccess = securityDBAccess;
         loadAllSecuritiesIntoCache();
     }
 
     private void loadAllSecuritiesIntoCache() {
-        List<Security> securities = securityRepository.getAllSecurities();
+        List<Security> securities = securityDBAccess.getAllSecurities();
         for (Security security : securities) {
             this.securitiesById.put(security.getId(), security);
             this.securitiesBySymbol.put(security.getSymbol(), security);
@@ -35,7 +35,7 @@ public class SecurityCache {
         }
 
         // Not in cache, try DB
-        Optional<Security> securityFromDb = securityRepository.findSecurityById(id);
+        Optional<Security> securityFromDb = securityDBAccess.findSecurityById(id);
         securityFromDb.ifPresent(security -> {
             securitiesById.put(security.getId(), security);
             securitiesBySymbol.put(security.getSymbol(), security);
@@ -49,7 +49,7 @@ public class SecurityCache {
         }
 
         // Not in cache, try DB
-        Optional<Security> securityFromDb = securityRepository.findSecurityBySymbol(symbol);
+        Optional<Security> securityFromDb = securityDBAccess.findSecurityBySymbol(symbol);
         securityFromDb.ifPresent(security -> {
             securitiesById.put(security.getId(), security);
             securitiesBySymbol.put(security.getSymbol(), security);
@@ -57,17 +57,21 @@ public class SecurityCache {
         return securityFromDb;
     }
 
-
-    public Security addSecurity(String symbol, String name, String exchange) {
+    /**
+     * Returns the security if added. Returns nothing if the security was not added (already in the cache)
+     */
+    public Optional<Security> addSecurity(String symbol, String name, String exchange) {
 
         if (securitiesBySymbol.containsKey(symbol)) {
-            return securitiesBySymbol.get(symbol);
+            return Optional.empty();
         }
 
-        Security newSecurity = securityRepository.addSecurity(symbol, name, exchange);
-        securitiesById.put(newSecurity.getId(), newSecurity);
-        securitiesBySymbol.put(newSecurity.getSymbol(), newSecurity);
-        return newSecurity;
+        Optional<Security> optionalSecurity = securityDBAccess.addSecurity(symbol, name, exchange);
+        optionalSecurity.ifPresent(security -> {
+            securitiesById.put(security.getId(), security);
+            securitiesBySymbol.put(security.getSymbol(), security);
+        });
+        return optionalSecurity;
     }
 
     public List<Security> getAllSecurities() {

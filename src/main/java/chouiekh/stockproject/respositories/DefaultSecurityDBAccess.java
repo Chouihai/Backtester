@@ -1,25 +1,27 @@
-package HaitamStockProject.respositories;
+package chouiekh.stockproject.respositories;
 
-import HaitamStockProject.objects.Security;
-import HaitamStockProject.services.DatabaseService;
+import chouiekh.stockproject.objects.Security;
+import chouiekh.stockproject.services.DatabaseService;
 import com.google.inject.Inject;
 
-import javax.swing.text.html.Option;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class SecurityRepository {
+public class DefaultSecurityDBAccess implements SecurityDBAccess {
 
     private final DatabaseService databaseService;
 
     @Inject
-    public SecurityRepository(DatabaseService databaseService) {
+    public DefaultSecurityDBAccess(DatabaseService databaseService) {
         this.databaseService = databaseService;
     }
 
-    public Security addSecurity(String symbol, String name, String exchange) {
+    public Optional<Security> addSecurity(String symbol, String name, String exchange) {
         String sql = "INSERT INTO securities (symbol, name, exchange) VALUES (?, ?, ?) RETURNING id, created_at";
 
         try (Connection conn = databaseService.getConnection();
@@ -31,19 +33,23 @@ public class SecurityRepository {
 
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                return new Security(
+                Security s = new Security(
                         rs.getInt("id"),
                         symbol,
                         name,
                         exchange,
                         rs.getTimestamp("created_at").toLocalDateTime()
                 );
+                return Optional.of(s);
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
+            System.out.println("Failed to create security: " + symbol);
+            return Optional.empty();
         }
-        throw new RuntimeException("Failed to add security: " + symbol);
+        System.out.println("Failed to create security: " + symbol);
+        return Optional.empty();
     }
 
     public Optional<Security> findSecurityBySymbol(String symbol) {
@@ -73,7 +79,7 @@ public class SecurityRepository {
         return Optional.empty();
     }
 
-    public Optional<Security> findSecurityById(Integer id) {
+    public Optional<Security> findSecurityById(int id) {
         String sql = "SELECT * FROM securities WHERE id = ?";
 
         try (Connection conn = databaseService.getConnection();
