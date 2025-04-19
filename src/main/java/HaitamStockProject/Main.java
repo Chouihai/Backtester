@@ -13,7 +13,7 @@ public class Main extends Application {
         Injector injector = Guice.createInjector(new AppModule());
         StockPriceApp stockPriceApp = injector.getInstance(StockPriceApp.class);
 
-        Scene scene = new Scene(stockPriceApp.getRoot(), 400, 250);
+        Scene scene = new Scene(stockPriceApp.getRoot(), 800, 600);
 
         primaryStage.setTitle("Stock Price Fetcher");
         primaryStage.setScene(scene);

@@ -1,6 +1,6 @@
 package HaitamStockProject;
 
-import HaitamStockProject.Services.StockService;
+import HaitamStockProject.services.StockService;
 import com.google.inject.Inject;
 import javafx.geometry.Insets;
 import javafx.scene.chart.CategoryAxis;
@@ -120,107 +120,4 @@ public class StockPriceApp {
             e.printStackTrace();
         }
     }
-
-
-//    private String fetchOpenPrice(String ticker, String date) {
-//        try {
-//            String urlStr = String.format(
-//                    "https://api.polygon.io/v1/open-close/%s/%s?adjusted=true&apiKey=%s",
-//                    ticker, date, API_KEY
-//            );
-//            URL url = new URL(urlStr);
-//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-//            conn.setRequestMethod("GET");
-//
-//            if (conn.getResponseCode() != 200) {
-//                return "Failed to fetch data: " + conn.getResponseMessage();
-//            }
-//
-//            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-//            StringBuilder responseBuilder = new StringBuilder();
-//            String line;
-//            while ((line = reader.readLine()) != null) {
-//                responseBuilder.append(line);
-//            }
-//            reader.close();
-//
-//            JSONObject json = new JSONObject(responseBuilder.toString());
-//            if (!"OK".equals(json.getString("status"))) {
-//                return "Error fetching stock data.";
-//            }
-//
-//            double openPrice = json.getDouble("open");
-//            return String.format("Open Price on %s: $%.2f", date, openPrice);
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return "Error fetching data.";
-//        }
-//    }
-
-//    private void fetchAndDisplayYTDData(String ticker) {
-//        try {
-//            LocalDate today = LocalDate.now();
-//            String from = today.getYear() + "-01-01";
-//            String to = today.toString();
-//
-//            String urlStr = String.format(
-//                    "https://api.polygon.io/v2/aggs/ticker/%s/range/1/day/%s/%s?adjusted=true&sort=asc&limit=50000&apiKey=%s",
-//                    ticker, from, to, API_KEY
-//            );
-//            URL url = new URL(urlStr);
-//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-//            conn.setRequestMethod("GET");
-//
-//            if (conn.getResponseCode() != 200) {
-//                resultLabel.setText("Failed to fetch YTD data: " + conn.getResponseMessage());
-//                return;
-//            }
-//
-//            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-//            StringBuilder responseBuilder = new StringBuilder();
-//            String line;
-//            while ((line = reader.readLine()) != null) {
-//                responseBuilder.append(line);
-//            }
-//            reader.close();
-//
-//            JSONObject json = new JSONObject(responseBuilder.toString());
-//            String status = json.getString("status");
-//            if (!"OK".equals(status) && !"DELAYED".equals(status)) {
-//                resultLabel.setText("Error fetching YTD stock data. Received status: " + json.getString("status"));
-//                return;
-//            }
-//
-//            priceSeries.getData().clear();
-//
-//            double minPrice = Double.MAX_VALUE;
-//            double maxPrice = Double.MIN_VALUE;
-//
-//            for (Object obj : json.getJSONArray("results")) {
-//                JSONObject candle = (JSONObject) obj;
-//                long timestamp = candle.getLong("t");
-//                double closePrice = candle.getDouble("c");
-//
-//                LocalDate date = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate();
-//                String dateStr = date.toString();
-//
-//                priceSeries.getData().add(new XYChart.Data<>(dateStr, closePrice));
-//
-//                if (closePrice < minPrice) minPrice = closePrice;
-//                if (closePrice > maxPrice) maxPrice = closePrice;
-//            }
-//
-//            double padding = (maxPrice - minPrice) * 0.05;
-//
-//            ((NumberAxis) stockChart.getYAxis()).setLowerBound(minPrice - padding);
-//            ((NumberAxis) stockChart.getYAxis()).setUpperBound(maxPrice + padding);
-//            ((NumberAxis) stockChart.getYAxis()).setAutoRanging(false); // Important: disable auto-ranging!
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            resultLabel.setText("Error fetching YTD data: " + e.toString());
-//        }
-//    }
-
 }

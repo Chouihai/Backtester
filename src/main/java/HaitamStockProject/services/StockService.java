@@ -1,7 +1,6 @@
-package HaitamStockProject.Services;
+package HaitamStockProject.services;
 
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import org.json.JSONObject;
 
