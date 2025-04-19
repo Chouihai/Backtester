@@ -57,7 +57,7 @@ class SecurityDayValuesCacheTest {
         assertTrue(fromCache.isPresent());
         assertEquals(BigDecimal.valueOf(100), fromCache.get().getOpen());
 
-        Optional<SecurityDayValues> fromDb = inMemoryDb.getDayValues(new SecurityDayValuesKey(1, march1st));
+        Optional<SecurityDayValues> fromDb = inMemoryDb.read(new SecurityDayValuesKey(1, march1st));
         assertTrue(fromDb.isPresent());
         SecurityDayValues values = fromDb.get();
         assertEquals(1, values.getSecurityId());
@@ -75,7 +75,7 @@ class SecurityDayValuesCacheTest {
     @Test
     void testGetDayValues_CacheMissLoadsFromDb() {
         SecurityDayValues dayValue = createSampleDayValue(2, march1st);
-        inMemoryDb.addDayValues(dayValue);
+        inMemoryDb.write(dayValue);
 
         Optional<SecurityDayValues> result = cache.getDayValues(2, march1st);
 
@@ -85,8 +85,8 @@ class SecurityDayValuesCacheTest {
 
     @Test
     void testGetAllDayValues_ReturnsCorrectly() {
-        inMemoryDb.addDayValues(createSampleDayValue(3, march1st.minusDays(1)));
-        inMemoryDb.addDayValues(createSampleDayValue(3, march1st));
+        inMemoryDb.write(createSampleDayValue(3, march1st.minusDays(1)));
+        inMemoryDb.write(createSampleDayValue(3, march1st));
 
         List<SecurityDayValues> allValues = cache.getAllDayValues(3);
 
@@ -100,9 +100,9 @@ class SecurityDayValuesCacheTest {
         securityCache.addSecurity("AAPL", "Apple Inc.", "NYSE");
         Security aapl = securityCache.getBySymbol("AAPL").get();
         int aaplId = aapl.getId();
-        inMemoryDb.addDayValues(createSampleDayValue(aaplId, march1st.minusDays(10)));
-        inMemoryDb.addDayValues(createSampleDayValue(aaplId, march1st.minusDays(20)));
-        inMemoryDb.addDayValues(createSampleDayValue(aaplId, march1st.minusDays(40)));
+        inMemoryDb.write(createSampleDayValue(aaplId, march1st.minusDays(10)));
+        inMemoryDb.write(createSampleDayValue(aaplId, march1st.minusDays(20)));
+        inMemoryDb.write(createSampleDayValue(aaplId, march1st.minusDays(40)));
 
         cache.loadRecentDayValuesIntoCache(30);
 

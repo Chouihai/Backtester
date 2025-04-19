@@ -18,18 +18,18 @@ public class InMemorySecurityDayValuesDBAccess implements SecurityDayValuesDBAcc
     }
 
     @Override
-    public void addDayValues(SecurityDayValues value) {
+    public void write(SecurityDayValues value) {
         SecurityDayValuesKey key = new SecurityDayValuesKey(value.getSecurityId(), value.getDate());
         storage.putIfAbsent(key, value);
     }
 
     @Override
-    public Optional<SecurityDayValues> getDayValues(SecurityDayValuesKey valuesKey) {
+    public Optional<SecurityDayValues> read(SecurityDayValuesKey valuesKey) {
         return Optional.ofNullable(storage.get(valuesKey));
     }
 
     @Override
-    public List<SecurityDayValues> getDayValues(int securityId) {
+    public List<SecurityDayValues> read(int securityId) {
         List<SecurityDayValues> result = new ArrayList<>();
         for (SecurityDayValues value : storage.values()) {
             if (value.getSecurityId() == securityId) {

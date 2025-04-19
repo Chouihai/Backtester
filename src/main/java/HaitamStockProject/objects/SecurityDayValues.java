@@ -36,10 +36,6 @@ public class SecurityDayValues {
         this.numTrades = numTrades;
     }
 
-    public int getId() {
-        return id;
-    }
-
     public int getSecurityId() {
         return securityId;
     }

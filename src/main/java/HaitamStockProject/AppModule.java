@@ -1,7 +1,9 @@
 package HaitamStockProject;
 
 import HaitamStockProject.dbaccess.DefaultSecurityDBAccess;
+import HaitamStockProject.dbaccess.DefaultSecurityDayValuesDBAccess;
 import HaitamStockProject.dbaccess.SecurityDBAccess;
+import HaitamStockProject.dbaccess.SecurityDayValuesDBAccess;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 
@@ -25,5 +27,6 @@ public class AppModule extends AbstractModule {
 
         Names.bindProperties(binder(), properties);
         bind(SecurityDBAccess.class).to(DefaultSecurityDBAccess.class);
+        bind(SecurityDayValuesDBAccess.class).to(DefaultSecurityDayValuesDBAccess.class);
     }
 }

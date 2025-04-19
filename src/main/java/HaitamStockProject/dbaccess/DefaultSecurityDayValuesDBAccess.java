@@ -20,10 +20,17 @@ public class DefaultSecurityDayValuesDBAccess implements SecurityDayValuesDBAcce
     }
 
     @Override
-    public void addDayValues(SecurityDayValues value) {
+    public void write(SecurityDayValues value) {
         String sql = "INSERT INTO daily_security_values (security_id, date, open, high, low, close, volume, vwap, num_trades) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                "ON CONFLICT (security_id, date) DO NOTHING";
+                "ON CONFLICT (security_id, date) DO UPDATE SET " +
+                "open = EXCLUDED.open, " +
+                "high = EXCLUDED.high, " +
+                "low = EXCLUDED.low, " +
+                "close = EXCLUDED.close, " +
+                "volume = EXCLUDED.volume, " +
+                "vwap = EXCLUDED.vwap, " +
+                "num_trades = EXCLUDED.num_trades";
 
         try (Connection conn = databaseService.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -46,7 +53,7 @@ public class DefaultSecurityDayValuesDBAccess implements SecurityDayValuesDBAcce
     }
 
     @Override
-    public Optional<SecurityDayValues> getDayValues(SecurityDayValuesKey valuesKey) {
+    public Optional<SecurityDayValues> read(SecurityDayValuesKey valuesKey) {
         String sql = "SELECT * FROM daily_security_values WHERE security_id = ? AND date = ?";
 
         try (Connection conn = databaseService.getConnection();
@@ -67,7 +74,7 @@ public class DefaultSecurityDayValuesDBAccess implements SecurityDayValuesDBAcce
     }
 
     @Override
-    public List<SecurityDayValues> getDayValues(int securityId) {
+    public List<SecurityDayValues> read(int securityId) {
         List<SecurityDayValues> list = new ArrayList<>();
         String sql = "SELECT * FROM daily_security_values WHERE security_id = ? ORDER BY date";
 

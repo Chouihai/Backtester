@@ -32,7 +32,7 @@ public class SecurityDayValuesCache {
         SecurityDayValuesKey key = new SecurityDayValuesKey(value.getSecurityId(), value.getDate());
 
         if (!cache.containsKey(key)) {
-            dbAccess.addDayValues(value);
+            dbAccess.write(value);
             cache.put(key, value);
             logger.debug("Cached daily value for Security ID {} on {}", value.getSecurityId(), value.getDate());
         } else {
@@ -53,7 +53,7 @@ public class SecurityDayValuesCache {
         }
 
         logger.debug("Cache miss for Security ID {} on {}, querying database...", securityId, date);
-        Optional<SecurityDayValues> valueFromDb = dbAccess.getDayValues(key);
+        Optional<SecurityDayValues> valueFromDb = dbAccess.read(key);
         valueFromDb.ifPresent(v -> {
             cache.put(key, v);
             logger.debug("Loaded and cached value for Security ID {} on {}", securityId, date);
@@ -61,9 +61,14 @@ public class SecurityDayValuesCache {
         return valueFromDb;
     }
 
+    public Optional<SecurityDayValues> getDayValues(String ticker, LocalDate date) {
+        return securityCache.getBySymbol(ticker).flatMap(security -> getDayValues(security.getId(), date));
+    }
+
+
     public List<SecurityDayValues> getAllDayValues(int securityId) {
         logger.debug("Fetching all daily values for Security ID {}", securityId);
-        List<SecurityDayValues> values = dbAccess.getDayValues(securityId);
+        List<SecurityDayValues> values = dbAccess.read(securityId);
 
         for (SecurityDayValues value : values) {
             SecurityDayValuesKey key = new SecurityDayValuesKey(value.getSecurityId(), value.getDate());
@@ -84,10 +89,9 @@ public class SecurityDayValuesCache {
                 SecurityDayValuesKey key = new SecurityDayValuesKey(value.getSecurityId(), value.getDate());
                 cache.put(key, value);
             }
-            logger.info("Cached {} day values for security {}", values.size(), security.getSymbol());
         }
 
-        logger.info("Finished loading recent day values into cache.");
+        logger.info("Finished loading recent day values into cache for {} securities.", securities.size());
     }
 
 }

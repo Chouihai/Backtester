@@ -8,11 +8,11 @@ import java.util.Optional;
 
 public interface SecurityDayValuesDBAccess {
 
-    void addDayValues(SecurityDayValues value);
+    void write(SecurityDayValues value);
 
-    Optional<SecurityDayValues> getDayValues(SecurityDayValuesKey valuesKey);
+    Optional<SecurityDayValues> read(SecurityDayValuesKey valuesKey);
 
-    List<SecurityDayValues> getDayValues(int securityId);
+    List<SecurityDayValues> read(int securityId);
 
     List<SecurityDayValues> getRecentDayValues(int securityId, int days);
 }

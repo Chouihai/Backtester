@@ -1,6 +1,6 @@
 package HaitamStockProject;
 
-import HaitamStockProject.services.StockService;
+import HaitamStockProject.services.SecurityDataService;
 import com.google.inject.Inject;
 import javafx.geometry.Insets;
 import javafx.scene.chart.CategoryAxis;
@@ -13,23 +13,28 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Instant;
 import java.time.ZoneId;
 
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StockPriceApp {
+
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     private VBox root;
     private Label resultLabel;
     private LineChart<String, Number> stockChart;
     private XYChart.Series<String, Number> priceSeries;
-    private final StockService stockService;
+    private final SecurityDataService securityDataService;
 
     @Inject
-    public StockPriceApp(StockService stockService) {
-        this.stockService = stockService;
+    public StockPriceApp(SecurityDataService securityDataService) {
+        this.securityDataService = securityDataService;
         setupUI();
     }
 
@@ -72,10 +77,10 @@ public class StockPriceApp {
             }
 
             try {
-                Double openPrice = stockService.fetchOpenPrice(ticker, date);
+                BigDecimal openPrice = securityDataService.fetchOpenPrice(ticker, date);
                 resultLabel.setText(String.format("Open Price on %s: $%.2f", date, openPrice));
 
-                JSONObject ytdData = stockService.fetchYTDData(ticker);
+                JSONObject ytdData = securityDataService.fetchYTDData(ticker);
                 updateChartWithYTDData(ytdData);
 
             } catch (Exception e) {
