@@ -1,10 +1,9 @@
-package HaitamStockProject.repositories;
+package HaitamStockProject.dbaccess;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import HaitamStockProject.objects.Security;
-import HaitamStockProject.respositories.SecurityDBAccess;
 
 public class InMemorySecurityDBAccess implements SecurityDBAccess {
 

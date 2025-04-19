@@ -3,7 +3,7 @@ package HaitamStockProject.caches;
 import HaitamStockProject.Main;
 import HaitamStockProject.Stopwatch;
 import HaitamStockProject.objects.Security;
-import HaitamStockProject.respositories.SecurityDBAccess;
+import HaitamStockProject.dbaccess.SecurityDBAccess;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.slf4j.Logger;

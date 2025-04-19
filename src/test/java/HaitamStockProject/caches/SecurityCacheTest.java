@@ -3,8 +3,8 @@ package HaitamStockProject.caches;
 import static org.junit.jupiter.api.Assertions.*;
 
 import HaitamStockProject.objects.Security;
-import HaitamStockProject.repositories.InMemorySecurityDBAccess;
-import HaitamStockProject.respositories.SecurityDBAccess;
+import HaitamStockProject.dbaccess.InMemorySecurityDBAccess;
+import HaitamStockProject.dbaccess.SecurityDBAccess;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +27,6 @@ class SecurityCacheTest {
         Optional<Security> security = securityCache.addSecurity("AAPL", "Apple Inc.", "NASDAQ");
 
         assertTrue(security.isPresent());
-        // Should now be cached
         Optional<Security> cached = securityCache.getById(security.get().getId());
         assertTrue(cached.isPresent());
         assertEquals("AAPL", cached.get().getSymbol());
@@ -35,6 +34,8 @@ class SecurityCacheTest {
         Optional<Security> cachedBySymbol = securityCache.getBySymbol("AAPL");
         assertTrue(cachedBySymbol.isPresent());
         assertEquals(security.get().getId(), cachedBySymbol.get().getId());
+
+        assertTrue(securityDBAccess.findSecurityBySymbol("AAPL").isPresent());
     }
 
     @Test

@@ -1,4 +1,4 @@
-package HaitamStockProject.respositories;
+package HaitamStockProject.dbaccess;
 
 import HaitamStockProject.objects.Security;
 

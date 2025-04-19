@@ -1,19 +1,15 @@
 package HaitamStockProject;
 
-import HaitamStockProject.respositories.DefaultSecurityDBAccess;
-import HaitamStockProject.respositories.SecurityDBAccess;
+import HaitamStockProject.dbaccess.DefaultSecurityDBAccess;
+import HaitamStockProject.dbaccess.SecurityDBAccess;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
 public class AppModule extends AbstractModule {
-
-    private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     @Override
     protected void configure() {
@@ -29,6 +25,5 @@ public class AppModule extends AbstractModule {
 
         Names.bindProperties(binder(), properties);
         bind(SecurityDBAccess.class).to(DefaultSecurityDBAccess.class);
-//        bind(Logger.class).toProvider(LoggerProvider.class);
     }
 }
