@@ -1,7 +1,7 @@
-package chouiekh.stockproject.caches;
+package HaitamStockProject.caches;
 
-import chouiekh.stockproject.objects.Security;
-import chouiekh.stockproject.respositories.SecurityDBAccess;
+import HaitamStockProject.objects.Security;
+import HaitamStockProject.respositories.SecurityDBAccess;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 

@@ -1,10 +1,10 @@
-package chouiekh.stockproject.caches;
+package HaitamStockProject.caches;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import chouiekh.stockproject.objects.Security;
-import chouiekh.stockproject.repositories.InMemorySecurityDBAccess;
-import chouiekh.stockproject.respositories.SecurityDBAccess;
+import HaitamStockProject.objects.Security;
+import HaitamStockProject.repositories.InMemorySecurityDBAccess;
+import HaitamStockProject.respositories.SecurityDBAccess;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

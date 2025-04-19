@@ -1,10 +1,10 @@
-package chouiekh.stockproject.repositories;
+package HaitamStockProject.repositories;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import chouiekh.stockproject.objects.Security;
-import chouiekh.stockproject.respositories.SecurityDBAccess;
+import HaitamStockProject.objects.Security;
+import HaitamStockProject.respositories.SecurityDBAccess;
 
 public class InMemorySecurityDBAccess implements SecurityDBAccess {
 

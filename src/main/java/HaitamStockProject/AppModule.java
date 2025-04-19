@@ -1,7 +1,7 @@
-package chouiekh.stockproject;
+package HaitamStockProject;
 
-import chouiekh.stockproject.respositories.DefaultSecurityDBAccess;
-import chouiekh.stockproject.respositories.SecurityDBAccess;
+import HaitamStockProject.respositories.DefaultSecurityDBAccess;
+import HaitamStockProject.respositories.SecurityDBAccess;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 

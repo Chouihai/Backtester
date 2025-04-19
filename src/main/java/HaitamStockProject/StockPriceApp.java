@@ -1,6 +1,6 @@
-package chouiekh.stockproject;
+package HaitamStockProject;
 
-import chouiekh.stockproject.services.StockService;
+import HaitamStockProject.services.StockService;
 import com.google.inject.Inject;
 import javafx.geometry.Insets;
 import javafx.scene.chart.CategoryAxis;

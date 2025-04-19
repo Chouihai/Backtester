@@ -1,7 +1,7 @@
-package chouiekh.stockproject.respositories;
+package HaitamStockProject.respositories;
 
-import chouiekh.stockproject.objects.Security;
-import chouiekh.stockproject.services.DatabaseService;
+import HaitamStockProject.objects.Security;
+import HaitamStockProject.services.DatabaseService;
 import com.google.inject.Inject;
 
 import java.sql.Connection;

@@ -1,6 +1,6 @@
-package chouiekh.stockproject.respositories;
+package HaitamStockProject.respositories;
 
-import chouiekh.stockproject.objects.Security;
+import HaitamStockProject.objects.Security;
 
 import java.util.List;
 import java.util.Optional;
