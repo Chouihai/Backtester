@@ -1,9 +1,13 @@
 package HaitamStockProject.caches;
 
+import HaitamStockProject.Main;
+import HaitamStockProject.Stopwatch;
 import HaitamStockProject.objects.Security;
 import HaitamStockProject.respositories.SecurityDBAccess;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Singleton
 public class SecurityCache {
 
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
     private final Map<Integer, Security> securitiesById = new ConcurrentHashMap<>();
     private final Map<String, Security> securitiesBySymbol = new ConcurrentHashMap<>();
     private final SecurityDBAccess securityDBAccess;
@@ -22,11 +27,13 @@ public class SecurityCache {
     }
 
     private void loadAllSecuritiesIntoCache() {
+        Stopwatch stopwatch = Stopwatch.start();
         List<Security> securities = securityDBAccess.getAllSecurities();
         for (Security security : securities) {
             this.securitiesById.put(security.getId(), security);
             this.securitiesBySymbol.put(security.getSymbol(), security);
         }
+        logger.info("loadAllSecuritiesIntoCache() took {} ms", stopwatch.elapsedMillis());
     }
 
     public Optional<Security> getById(Integer id) {
@@ -70,6 +77,7 @@ public class SecurityCache {
         optionalSecurity.ifPresent(security -> {
             securitiesById.put(security.getId(), security);
             securitiesBySymbol.put(security.getSymbol(), security);
+            logger.info("Added new security {} to cache and database.", security.getSymbol());
         });
         return optionalSecurity;
     }
