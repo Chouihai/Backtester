@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.HashMap;
 
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -77,8 +78,10 @@ public class StockPriceApp {
             }
 
             try {
-                BigDecimal openPrice = securityDataService.fetchOpenPrice(ticker, date);
+                double openPrice = securityDataService.fetchOpenPrice(ticker, date);
                 resultLabel.setText(String.format("Open Price on %s: $%.2f", date, openPrice));
+
+//                HashMap<LocalDate, Double> closePrices = securityDataService.fetchSecurityDayValues(ticker,  LocalDate.of(2024, 1, 1), LocalDate.of(2025, 5, 1));
 
                 JSONObject ytdData = securityDataService.fetchYTDData(ticker);
                 updateChartWithYTDData(ytdData);

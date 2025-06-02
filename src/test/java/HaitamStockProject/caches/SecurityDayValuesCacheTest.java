@@ -37,12 +37,12 @@ class SecurityDayValuesCacheTest {
         return new SecurityDayValues(
                 securityId,
                 date,
-                BigDecimal.valueOf(100),
-                BigDecimal.valueOf(110),
-                BigDecimal.valueOf(90),
-                BigDecimal.valueOf(105),
+                100,
+                110,
+                90,
+                105,
                 1_000_000,
-                BigDecimal.valueOf(102),
+                102,
                 5000
         );
     }

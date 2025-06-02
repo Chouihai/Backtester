@@ -1,30 +1,29 @@
 package HaitamStockProject.objects;
 
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class SecurityDayValues {
 
     private final int securityId;
     private final LocalDate date;
-    private final BigDecimal open;
-    private final BigDecimal high;
-    private final BigDecimal low;
-    private final BigDecimal close;
+    private final double open;
+    private final double high;
+    private final double low;
+    private final double close;
     private final long volume;
-    private final BigDecimal vwap;
+    private final double vwap;
     private final int numTrades;
 
     public SecurityDayValues(int securityId,
-                           LocalDate date,
-                           BigDecimal open,
-                           BigDecimal high,
-                           BigDecimal low,
-                           BigDecimal close,
-                           long volume,
-                           BigDecimal vwap,
-                           int numTrades) {
+                             LocalDate date,
+                             double open,
+                             double high,
+                             double low,
+                             double close,
+                             long volume,
+                             double vwap,
+                             int numTrades) {
         this.securityId = securityId;
         this.date = date;
         this.open = open;
@@ -36,6 +35,19 @@ public class SecurityDayValues {
         this.numTrades = numTrades;
     }
 
+    public SecurityDayValues withClosePrice(double close) {
+        return new SecurityDayValues(securityId, date, open, high, low, close, volume, vwap, numTrades);
+    }
+
+    public SecurityDayValues withOpenPrice(double open) {
+        return new SecurityDayValues(securityId, date, open, high, low, close, volume, vwap, numTrades);
+    }
+
+    public SecurityDayValues withDate(LocalDate date) {
+        return new SecurityDayValues(securityId, date, open, high, low, close, volume, vwap, numTrades);
+    }
+
+
     public int getSecurityId() {
         return securityId;
     }
@@ -44,19 +56,19 @@ public class SecurityDayValues {
         return date;
     }
 
-    public BigDecimal getOpen() {
+    public double getOpen() {
         return open;
     }
 
-    public BigDecimal getHigh() {
+    public double getHigh() {
         return high;
     }
 
-    public BigDecimal getLow() {
+    public double getLow() {
         return low;
     }
 
-    public BigDecimal getClose() {
+    public double getClose() {
         return close;
     }
 
@@ -64,7 +76,7 @@ public class SecurityDayValues {
         return volume;
     }
 
-    public BigDecimal getVwap() {
+    public double getVwap() {
         return vwap;
     }
 

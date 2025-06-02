@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 public class Security {
 
+    // I think I will make the symbol here the unique identifier, and I will only support US exchange securities.
+    // For now I will only support equities and ETFs.
     private final int id;
     private final String symbol;
     private final String name;

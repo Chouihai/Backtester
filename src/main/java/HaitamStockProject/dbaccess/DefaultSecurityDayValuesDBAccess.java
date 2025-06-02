@@ -37,12 +37,12 @@ public class DefaultSecurityDayValuesDBAccess implements SecurityDayValuesDBAcce
 
             stmt.setInt(1, value.getSecurityId());
             stmt.setDate(2, Date.valueOf(value.getDate()));
-            stmt.setBigDecimal(3, value.getOpen());
-            stmt.setBigDecimal(4, value.getHigh());
-            stmt.setBigDecimal(5, value.getLow());
-            stmt.setBigDecimal(6, value.getClose());
+            stmt.setDouble(3, value.getOpen());
+            stmt.setDouble(4, value.getHigh());
+            stmt.setDouble(5, value.getLow());
+            stmt.setDouble(6, value.getClose());
             stmt.setLong(7, value.getVolume());
-            stmt.setBigDecimal(8, value.getVwap());
+            stmt.setDouble(8, value.getVwap());
             stmt.setInt(9, value.getNumTrades());
 
             stmt.executeUpdate();
@@ -120,12 +120,12 @@ public class DefaultSecurityDayValuesDBAccess implements SecurityDayValuesDBAcce
         return new SecurityDayValues(
                 rs.getInt("security_id"),
                 rs.getDate("date").toLocalDate(),
-                rs.getBigDecimal("open"),
-                rs.getBigDecimal("high"),
-                rs.getBigDecimal("low"),
-                rs.getBigDecimal("close"),
+                rs.getDouble("open"),
+                rs.getDouble("high"),
+                rs.getDouble("low"),
+                rs.getDouble("close"),
                 rs.getLong("volume"),
-                rs.getBigDecimal("vwap"),
+                rs.getDouble("vwap"),
                 rs.getInt("num_trades")
         );
     }
