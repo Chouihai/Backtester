@@ -15,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -164,7 +165,8 @@ public class DefaultSecurityDataService implements SecurityDataService {
 
     private JSONObject makeApiCall(String urlStr) {
         try {
-            URL url = new URL(urlStr);
+            URI uri = new URI(urlStr);
+            URL url = uri.toURL();
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
 

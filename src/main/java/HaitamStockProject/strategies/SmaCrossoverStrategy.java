@@ -40,6 +40,7 @@ public class SmaCrossoverStrategy implements Strategy<SecurityDayValues> {
      */
     private List<Order> makeTrades() {
         List<Order> result = new ArrayList<>();
+        // It can't enter a position
         if (didCrossingHappen()) {
             if (smaA.getAverage() > smaB.getAverage()) {
                 result.add(new Order(symbol, mostRecentOpen, quantity, currentDate, businessDayService.nextBusinessDay(currentDate)));
@@ -68,7 +69,7 @@ public class SmaCrossoverStrategy implements Strategy<SecurityDayValues> {
         double diff = smaA.getAverage() - smaB.getAverage();
         if (diff > 0) {
             previousSign = 1;
-        } else  if (diff < 0) {
+        } else if (diff < 0) {
             previousSign = -1;
         }
         smaA.addValue(inputs.getClose());
