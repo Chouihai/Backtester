@@ -1,5 +1,8 @@
 package HaitamStockProject.script;
 
+import HaitamStockProject.script.tokens.Token;
+import HaitamStockProject.script.tokens.TokenType;
+import HaitamStockProject.script.tokens.Tokenizer;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

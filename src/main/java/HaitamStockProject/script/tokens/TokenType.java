@@ -1,4 +1,4 @@
-package HaitamStockProject.script;
+package HaitamStockProject.script.tokens;
 
 public enum TokenType {
     // Keywords

@@ -42,6 +42,10 @@ public class BackTester {
 
     // TODO: incomplete
     public BacktesterResult run() {
+        // TODO: get the script
+        // TODO: get the initial values
+        // TODO: create strategy runner
+        // TODO: initialize caches (clear them)
         while (currentDate.isBefore(endDate)) {
             // First we check if we need to make any trades
             List<Order> orders = strategy.roll(securityDayValuesByDate.get(currentDate));
@@ -60,14 +64,14 @@ public class BackTester {
     private void executeTrades() {
         double openPrice = securityDayValuesByDate.get(currentDate).getOpen();
         for (Order order: this.openOrders) {
-            if (order.getSettleDate() == currentDate) {
-                if (order.getSignedQuantity() < 0) {
-                    int sharesSold = Math.abs((position.getQuantity() + order.getSignedQuantity() > 0) ? order.getSignedQuantity() : position.getQuantity());
+            if (order.settleDate() == currentDate) {
+                if (order.signedQuantity() < 0) {
+                    int sharesSold = Math.abs((position.getQuantity() + order.signedQuantity() > 0) ? order.signedQuantity() : position.getQuantity());
                     position.setQuantity(position.getQuantity() - sharesSold);
                     balance += sharesSold * openPrice;
-                } else if (order.getSignedQuantity() > 0){
-                    balance -= order.getSignedQuantity() * openPrice;
-                    position.addShares(order.getSignedQuantity());
+                } else if (order.signedQuantity() > 0){
+                    balance -= order.signedQuantity() * openPrice;
+                    position.addShares(order.signedQuantity());
                 }
                 this.openOrders.remove(order); // TODO: might need to be more efficient (Probably make this a queue)
             }

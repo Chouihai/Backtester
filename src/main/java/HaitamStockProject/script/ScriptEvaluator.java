@@ -1,12 +1,28 @@
 package HaitamStockProject.script;
 
-import java.util.List;
-import java.util.Objects;
+import HaitamStockProject.script.functions.ScriptFunction;
+import HaitamStockProject.script.functions.ScriptFunctionRegistry;
+import HaitamStockProject.script.statements.*;
+import HaitamStockProject.script.tokens.Parser;
+import HaitamStockProject.script.tokens.TokenType;
+
+import java.util.*;
 
 public class ScriptEvaluator {
-    private final EvaluationContext context = new EvaluationContext();
 
-    public void evaluate(List<Statement> statements) {
+    private final ScriptFunctionRegistry registry;
+    private final List<Statement> statements;
+    private final Map<String, Object> variables = new HashMap<>();
+    private EvaluationContext currentContext;
+
+    public ScriptEvaluator(String script, ScriptFunctionRegistry registry) {
+        Parser parser = new Parser(script);
+        this.statements = parser.parse();
+        this.registry = registry;
+    }
+
+    public void evaluate(EvaluationContext context) {
+        this.currentContext = context;
         for (Statement stmt : statements) {
             evaluate(stmt);
         }
@@ -24,7 +40,7 @@ public class ScriptEvaluator {
             }
         } else if (stmt instanceof VariableDeclaration assign) {
             Object value = evaluate(assign.initializer);
-            context.set(assign.name, value);
+            variables.put(assign.name, value);
         }
         throw new RuntimeException("Unknown statement type: " + stmt.getClass());
     }
@@ -33,7 +49,7 @@ public class ScriptEvaluator {
         if (expr instanceof Literal lit) {
             return lit.value;
         } else if (expr instanceof Identifier var) {
-            return context.get(var.name);
+            return variables.get(var.name);
         } else if (expr instanceof BinaryExpression bin) {
             Object left = evaluate(bin.left);
             Object right = evaluate(bin.right);
@@ -49,23 +65,8 @@ public class ScriptEvaluator {
     private Object handleFunctionCall(FunctionCall call) {
         String name = call.functionName;
         List<Object> args = call.arguments.stream().map(this::evaluate).toList();
-
-        if (name.equals("entry")) {
-            // TODO: implement
-//            String id = (String) args.get(0);
-//            boolean isLong = (Boolean) args.get(1);
-//            double quantity = ((Number) args.get(2)).doubleValue();
-//            context.log("Enter position: " + id + " (" + (isLong ? "long" : "short") + ") x " + quantity);
-//            return null;
-        }
-
-        if (name.equals("close")) {
-            // TODO: implement
-//            String id = (String) args.get(0);
-//            context.log("Close position: " + id);
-//            return null;
-        }
-
+        ScriptFunction function = registry.get(name);
+        function.execute(args, this.currentContext);
         throw new RuntimeException("Unknown function: " + name);
     }
 
@@ -92,9 +93,5 @@ public class ScriptEvaluator {
             case SLASH -> l / r;
             default -> throw new RuntimeException("Unsupported operator: " + op);
         };
-    }
-
-    public EvaluationContext getContext() {
-        return context;
     }
 }

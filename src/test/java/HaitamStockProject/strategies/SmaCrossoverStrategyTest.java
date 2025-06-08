@@ -139,9 +139,9 @@ public class SmaCrossoverStrategyTest {
         List<Order> trades = strategy.roll(day);
         assertEquals(1, trades.size());
         Order order = trades.get(0);
-        assertEquals("AAPL", order.getSymbol());
-        assertEquals(-10, order.getSignedQuantity());
-        assertEquals(111.0, order.getPrice(), 0.0001);
+        assertEquals("AAPL", order.symbol());
+        assertEquals(-10, order.signedQuantity());
+        assertEquals(111.0, order.price(), 0.0001);
 
         // roll again to make sure it only makes orders at a cross
         date = businessDayService.nextBusinessDay(date);
@@ -177,9 +177,9 @@ public class SmaCrossoverStrategyTest {
         List<Order> trades = strategy.roll(day);
         assertEquals(1, trades.size());
         Order order = trades.get(0);
-        assertEquals("AAPL", order.getSymbol());
-        assertEquals(10, order.getSignedQuantity());
-        assertEquals(111.0, order.getPrice(), 0.0001);
+        assertEquals("AAPL", order.symbol());
+        assertEquals(10, order.signedQuantity());
+        assertEquals(111.0, order.price(), 0.0001);
 
         // roll again to make sure it only makes orders at a cross
         date = businessDayService.nextBusinessDay(date);
@@ -222,9 +222,9 @@ public class SmaCrossoverStrategyTest {
         trades = strategy.roll(day);
         assertEquals(1, trades.size());
         Order order = trades.get(0);
-        assertEquals("AAPL", order.getSymbol());
-        assertEquals(10, order.getSignedQuantity());
-        assertEquals(111.0, order.getPrice(), 0.0001);
+        assertEquals("AAPL", order.symbol());
+        assertEquals(10, order.signedQuantity());
+        assertEquals(111.0, order.price(), 0.0001);
     }
 
     @Test

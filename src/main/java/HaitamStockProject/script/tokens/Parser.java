@@ -1,4 +1,6 @@
-package HaitamStockProject.script;
+package HaitamStockProject.script.tokens;
+
+import HaitamStockProject.script.statements.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,8 +10,9 @@ public class Parser {
     private final List<Token> tokens;
     private int current = 0;
 
-    public Parser(List<Token> tokens) {
-        this.tokens = tokens;
+    public Parser(String s) {
+        Tokenizer tokenizer = new Tokenizer(s);
+        this.tokens = tokenizer.tokenize();
     }
 
     public List<Statement> parse() {

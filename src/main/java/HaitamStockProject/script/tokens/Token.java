@@ -1,4 +1,4 @@
-package HaitamStockProject.script;
+package HaitamStockProject.script.tokens;
 
 public class Token {
     public final TokenType type;

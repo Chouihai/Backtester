@@ -1,20 +1,39 @@
 package HaitamStockProject.strategies;
 
+import HaitamStockProject.backtester.caches.BacktestRunValueAccumulatorCache;
 import HaitamStockProject.objects.Bar;
+import HaitamStockProject.script.EvaluationContext;
+import HaitamStockProject.script.ScriptAnalyzer;
+import HaitamStockProject.script.functions.ScriptFunctionRegistry;
+import HaitamStockProject.script.functions.ScriptFunctionRegistryFactory;
 import HaitamStockProject.script.ScriptEvaluator;
+import com.google.inject.Inject;
+
+import java.util.List;
 
 public class StrategyRunner {
 
-    private final ScriptEvaluator evaluator;
-    private final String strategy;
+    private ScriptEvaluator evaluator;
+    private final ScriptFunctionRegistryFactory scriptFunctionRegistryFactory;
+    private final BacktestRunValueAccumulatorCache backtestRunValueAccumulatorCache;
 
-    public StrategyRunner(String strategy, ScriptEvaluator evaluator) {
-        this.strategy = strategy;
-        // Scan strategy for all functions and identifiers
-        // Create what we need to add to our context based on what's in the strategy
-        // Ex: if it has the SMA function, we'll need an SMA calculator (with some id)
-        this.evaluator = evaluator;
+    @Inject()
+    public StrategyRunner(ScriptFunctionRegistryFactory scriptFunctionRegistryFactory,
+                          BacktestRunValueAccumulatorCache backtestRunValueAccumulatorCache) {
+        this.scriptFunctionRegistryFactory = scriptFunctionRegistryFactory;
+        this.backtestRunValueAccumulatorCache = backtestRunValueAccumulatorCache;
     }
 
-    void next(Bar bar) {}
+    public void initialize(String strategy, List<Bar> initialValues) {
+        ScriptAnalyzer scriptAnalyzer = new ScriptAnalyzer(strategy);
+        ScriptFunctionRegistry registry = scriptFunctionRegistryFactory.createRegistry(scriptAnalyzer.getAllFunctionsUsed());
+        this.evaluator = new ScriptEvaluator(strategy, registry);
+        this.backtestRunValueAccumulatorCache.intialize(initialValues);
+    }
+
+    void roll(Bar bar) {
+        this.backtestRunValueAccumulatorCache.roll(bar);
+        evaluator.evaluate(new EvaluationContext(bar));
+        // Check the orderCache for positions that need to be executed and EXECUTE THEM
+    }
 }
