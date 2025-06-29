@@ -1,5 +1,8 @@
 package HaitamStockProject.objects;
 
+/**
+ * Represents the entire position of a security with its stats and everything
+ */
 public class Position {
 
     private final String symbol;

@@ -1,6 +1,6 @@
 package HaitamStockProject.backtester;
 
-import HaitamStockProject.objects.Order;
+import HaitamStockProject.objects.order.Order;
 import HaitamStockProject.objects.Position;
 
 import java.util.List;

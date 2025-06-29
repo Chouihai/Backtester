@@ -4,7 +4,10 @@ import HaitamStockProject.objects.Position;
 
 import java.util.Map;
 
-public interface BacktestRunPositionCache {
+/**
+ * In memory cache, does not read anything from a database
+ */
+public interface PositionCache {
 
     void addPosition(Position position);
 

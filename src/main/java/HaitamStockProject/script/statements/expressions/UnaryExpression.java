@@ -1,4 +1,4 @@
-package HaitamStockProject.script.statements;
+package HaitamStockProject.script.statements.expressions;
 
 import HaitamStockProject.script.tokens.Token;
 

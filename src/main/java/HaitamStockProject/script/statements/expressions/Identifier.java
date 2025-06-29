@@ -1,4 +1,4 @@
-package HaitamStockProject.script.statements;
+package HaitamStockProject.script.statements.expressions;
 
 public class Identifier extends Expression {
     public final String name;

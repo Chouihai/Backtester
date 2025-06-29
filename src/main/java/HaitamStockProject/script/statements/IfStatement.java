@@ -1,5 +1,7 @@
 package HaitamStockProject.script.statements;
 
+import HaitamStockProject.script.statements.expressions.Expression;
+
 import java.util.List;
 
 public class IfStatement extends Statement {

@@ -1,3 +1,4 @@
 package HaitamStockProject.script.functions;
 
-public abstract class ScriptFunctionResult {}
+public class CrossunderFn {
+}

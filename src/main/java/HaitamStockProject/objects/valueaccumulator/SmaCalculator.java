@@ -1,7 +1,8 @@
-package HaitamStockProject.strategies;
+package HaitamStockProject.objects.valueaccumulator;
 
 import HaitamStockProject.objects.Bar;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -9,21 +10,23 @@ import java.util.Queue;
 /**
  * Constant time SMA calculator
  */
-public class SmaCalculator implements ValueAccumulator {
+public class SmaCalculator implements ValueAccumulator<Double> {
 
-    private final int numDays;
+    public final int numDays;
     private final Queue<Double> values = new LinkedList<>();
     private double sumOfAllValues = 0.0;
+    private final List<Bar> initalValues;
 
     public SmaCalculator(int numDays, List<Bar> initialValues) {
         if (numDays <= 0 || initialValues.size() < numDays) throw new IllegalArgumentException();
+        this.initalValues = new ArrayList<>(initialValues);
         this.numDays = numDays;
         for (Bar d : initialValues) {
             this.addValue(d.getClose());
         }
     }
 
-    public void addValue(Bar bar) {
+    public void roll(Bar bar) {
         addValue(bar.getClose());
     }
 
@@ -38,7 +41,15 @@ public class SmaCalculator implements ValueAccumulator {
         this.sumOfAllValues = sumOfAllValues - oldest + latest;
     }
 
+    public Double getValue() {
+        return getAverage();
+    }
+
     public double getAverage() {
         return sumOfAllValues / numDays;
+    }
+
+    public SmaCalculator copy() {
+        return new SmaCalculator(numDays, initalValues);
     }
 }

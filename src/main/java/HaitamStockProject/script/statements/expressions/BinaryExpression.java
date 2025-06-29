@@ -1,4 +1,4 @@
-package HaitamStockProject.script.statements;
+package HaitamStockProject.script.statements.expressions;
 
 import HaitamStockProject.script.tokens.Token;
 
@@ -11,5 +11,10 @@ public class BinaryExpression extends Expression {
         this.left = left;
         this.operator = operator;
         this.right = right;
+    }
+
+    @Override
+    public boolean isBinary() {
+        return true;
     }
 }

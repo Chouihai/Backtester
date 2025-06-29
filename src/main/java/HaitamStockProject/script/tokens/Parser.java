@@ -1,27 +1,35 @@
 package HaitamStockProject.script.tokens;
 
+import HaitamStockProject.objects.CompiledScript;
 import HaitamStockProject.script.statements.*;
+import HaitamStockProject.script.statements.expressions.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Parser {
 
-    private final List<Token> tokens;
+    private List<Token> tokens;
+    private Map<String, Set<FunctionCall>> functionCalls;
+//    private Map<String, VariableDeclaration> variables ;
     private int current = 0;
+    private final AtomicInteger seriesIds = new AtomicInteger(1);
 
-    public Parser(String s) {
+    public CompiledScript parse(String s) {
         Tokenizer tokenizer = new Tokenizer(s);
-        this.tokens = tokenizer.tokenize();
+        tokens = tokenizer.tokenize();
+        functionCalls = new HashMap<>();
+//        variables = new HashMap<>();
+        List<Statement> statements = new ArrayList<>();
+        while (!isAtEnd()) {
+            while(check(TokenType.NEWLINE)) advance();
+            Statement stmt = parseStatement();
+            statements.add(stmt);
+            while(check(TokenType.NEWLINE)) advance();
+        }
+        return new CompiledScript(statements, functionCalls);
     }
 
-    public List<Statement> parse() {
-        List<Statement> statements = new ArrayList<>();
-        while (!(isAtEnd() || check(TokenType.NEWLINE))) {
-            statements.add(parseStatement());
-        }
-        return statements;
-    }
 
     private Statement parseStatement() {
         if (match(TokenType.IF)) {
@@ -39,7 +47,9 @@ public class Parser {
         Token name = consume(TokenType.IDENTIFIER, "Expected variable name.");
         consume(TokenType.EQUALS, "Expected '=' after variable name.");
         Expression expr = parseExpression();
-        return new VariableDeclaration(name.lexeme, expr);
+        VariableDeclaration var = new VariableDeclaration(name.lexeme, expr);
+//        variables.put(name.lexeme, var);
+        return var;
     }
 
     private Statement parseExpressionStatement() {
@@ -143,8 +153,27 @@ public class Parser {
                     } while (match(TokenType.COMMA));
                 }
                 consume(TokenType.RPAREN, "Expected ')' after arguments.");
-                return new FunctionCall(identifier.lexeme, args);
+//                if (isSeries(identifier.lexeme)) {
+//                    return parseSeriesLiteral(identifier.lexeme, args);
+//                }
+                FunctionCall fn = new FunctionCall(identifier.lexeme, args);
+                Set<FunctionCall> previousCalls = functionCalls.get(fn.functionName);
+                if (previousCalls != null) {
+                    previousCalls.add(fn);
+                    functionCalls.put(fn.functionName, previousCalls);
+                } else {
+                    Set<FunctionCall> newCalls = new HashSet<>();
+                    newCalls.add(fn);
+                    functionCalls.put(fn.functionName, newCalls);
+                }
+                return fn;
             } else {
+//                if (variables.containsKey(identifier.lexeme)) {
+//                    return variables.get(identifier.lexeme).initializer;
+//                }
+//                if (isSeries(identifier.lexeme)) {
+//                    return parseSeriesLiteral(identifier.lexeme, new ArrayList<>());
+//                }
                 return new Identifier(identifier.lexeme);
             }
         }
@@ -159,6 +188,23 @@ public class Parser {
     }
 
     // === Utility Methods ===
+//    private boolean isSeries(String name) {
+//        return Objects.equals(name, "sma"); // TODO: add more later
+//    }
+//
+//
+//    private SeriesLiteral parseSeriesLiteral(String seriesName, List<Expression> args) {
+//        if (args == null || args.size() > 1) throw new RuntimeException("Invalid arguments for a value accumulator");
+//        else return new SeriesLiteral(seriesTypeFromString(seriesName), args, seriesIds.getAndIncrement());
+//    }
+//
+//    private SeriesType seriesTypeFromString(String seriesType) {
+//        return switch (seriesType) {
+//            case "sma" -> SMA;
+//            case "ema" -> EMA;
+//            default -> throw new RuntimeException("Invalid value accumulator type: " + seriesType);
+//        };
+//    }
 
     private boolean match(TokenType... types) {
         for (TokenType type : types) {

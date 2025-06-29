@@ -1,4 +1,4 @@
-package HaitamStockProject.script.statements;
+package HaitamStockProject.script.statements.expressions;
 
 public class Literal extends Expression {
     public final Object value;

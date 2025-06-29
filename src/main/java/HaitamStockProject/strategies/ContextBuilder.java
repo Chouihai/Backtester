@@ -1,12 +1,5 @@
 package HaitamStockProject.strategies;
 
-import HaitamStockProject.objects.Bar;
-import HaitamStockProject.script.EvaluationContext;
-import HaitamStockProject.script.statements.FunctionCall;
-import HaitamStockProject.script.statements.Literal;
-
-import java.util.*;
-
 public class ContextBuilder {
 
 //    private final List<FunctionCall> functionCalls;

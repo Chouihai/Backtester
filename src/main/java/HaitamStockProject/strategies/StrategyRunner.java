@@ -1,39 +1,44 @@
 package HaitamStockProject.strategies;
 
-import HaitamStockProject.backtester.caches.BacktestRunValueAccumulatorCache;
+import HaitamStockProject.backtester.caches.ValueAccumulatorCache;
 import HaitamStockProject.objects.Bar;
+import HaitamStockProject.objects.CompiledScript;
 import HaitamStockProject.script.EvaluationContext;
-import HaitamStockProject.script.ScriptAnalyzer;
 import HaitamStockProject.script.functions.ScriptFunctionRegistry;
 import HaitamStockProject.script.functions.ScriptFunctionRegistryFactory;
 import HaitamStockProject.script.ScriptEvaluator;
+import HaitamStockProject.script.tokens.Parser;
 import com.google.inject.Inject;
-
-import java.util.List;
 
 public class StrategyRunner {
 
     private ScriptEvaluator evaluator;
     private final ScriptFunctionRegistryFactory scriptFunctionRegistryFactory;
-    private final BacktestRunValueAccumulatorCache backtestRunValueAccumulatorCache;
+    private final ValueAccumulatorCache valueAccumulatorCache;
 
     @Inject()
     public StrategyRunner(ScriptFunctionRegistryFactory scriptFunctionRegistryFactory,
-                          BacktestRunValueAccumulatorCache backtestRunValueAccumulatorCache) {
+                          ValueAccumulatorCache valueAccumulatorCache) {
         this.scriptFunctionRegistryFactory = scriptFunctionRegistryFactory;
-        this.backtestRunValueAccumulatorCache = backtestRunValueAccumulatorCache;
+        this.valueAccumulatorCache = valueAccumulatorCache;
     }
 
-    public void initialize(String strategy, List<Bar> initialValues) {
-        ScriptAnalyzer scriptAnalyzer = new ScriptAnalyzer(strategy);
-        ScriptFunctionRegistry registry = scriptFunctionRegistryFactory.createRegistry(scriptAnalyzer.getAllFunctionsUsed());
-        this.evaluator = new ScriptEvaluator(strategy, registry);
-        this.backtestRunValueAccumulatorCache.intialize(initialValues);
+    /**
+     * Get all functions and value accumulators needed
+     */
+    public void initialize(String strategy, String symbol, Bar initialBar) {
+        CompiledScript compiled = new Parser().parse(strategy);
+        ScriptFunctionRegistry registry = scriptFunctionRegistryFactory.createRegistry(compiled.functionCalls(), initialBar);
+        this.evaluator = new ScriptEvaluator(compiled, registry, valueAccumulatorCache);
+        this.evaluator.evaluate(new EvaluationContext(initialBar));
     }
 
-    void roll(Bar bar) {
-        this.backtestRunValueAccumulatorCache.roll(bar);
+    /**
+     * First we run anything we need to at open (Fill orders)
+     * Then we run the script... I think
+     */
+    public void roll(Bar bar) {
+        this.valueAccumulatorCache.roll(bar);
         evaluator.evaluate(new EvaluationContext(bar));
-        // Check the orderCache for positions that need to be executed and EXECUTE THEM
     }
 }

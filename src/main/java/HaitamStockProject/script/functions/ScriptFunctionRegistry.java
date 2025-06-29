@@ -18,4 +18,8 @@ public class ScriptFunctionRegistry {
     public boolean contains(String name) {
         return functions.containsKey(name);
     }
+
+    public int size() {
+        return functions.size();
+    }
 }

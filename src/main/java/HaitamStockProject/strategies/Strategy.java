@@ -1,6 +1,6 @@
 package HaitamStockProject.strategies;
 
-import HaitamStockProject.objects.Order;
+import HaitamStockProject.objects.order.Order;
 
 import java.util.List;
 

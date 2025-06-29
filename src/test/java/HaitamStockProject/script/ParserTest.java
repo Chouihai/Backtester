@@ -1,8 +1,7 @@
 package HaitamStockProject.script;
 import HaitamStockProject.script.statements.*;
+import HaitamStockProject.script.statements.expressions.*;
 import HaitamStockProject.script.tokens.Parser;
-import HaitamStockProject.script.tokens.Token;
-import HaitamStockProject.script.tokens.Tokenizer;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
@@ -10,10 +9,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ParserTest {
 
     private List<Statement> parse(String source) {
-        Tokenizer tokenizer = new Tokenizer(source);
-        List<Token> tokens = tokenizer.tokenize();
-        Parser parser = new Parser(tokens);
-        return parser.parse();
+        Parser parser = new Parser();
+        return parser.parse(source).statements();
     }
 
     @Test
@@ -46,6 +43,22 @@ public class ParserTest {
         VariableDeclaration decl = (VariableDeclaration) stmts.get(0);
         assertInstanceOf(UnaryExpression.class, decl.initializer);
     }
+
+    @Test
+    public void oogaBooga() {
+        List<Statement> stmts = parse("""
+                
+                x = -5
+                
+                y = 3
+                
+                
+                """);
+        assertEquals(2, stmts.size());
+        VariableDeclaration decl = (VariableDeclaration) stmts.get(0);
+        assertInstanceOf(UnaryExpression.class, decl.initializer);
+    }
+
 
     @Test
     public void testFunctionCallExpression() {
@@ -110,6 +123,81 @@ public class ParserTest {
         assertEquals(2, ifStmt.body.size());
         assertInstanceOf(VariableDeclaration.class, ifStmt.body.get(0));
         assertInstanceOf(VariableDeclaration.class, ifStmt.body.get(1));
+    }
+
+    @Test
+    public void foo() {
+        List<Statement> stmts = parse("""
+                sma20 = sma(20)
+                sma50 = sma(50)
+                
+                if (sma20 > sma50)
+                    createOrder("long", true, 10)
+                    closeOrder("position1")
+                if (sma50 > sma20)
+                    createOrder("position1", false, 10)
+                """);
+
+        assertEquals(4, stmts.size());
+        VariableDeclaration variableDeclaration1 = (VariableDeclaration) stmts.get(0);
+        assertTrue(variableDeclaration1.initializer.isValueAccumulatorLiteral());
+        assertTrue(variableDeclaration1.initializer.isLiteral());
+        assertEquals("sma20", variableDeclaration1.name);
+
+        VariableDeclaration variableDeclaration2 = (VariableDeclaration) stmts.get(1);
+        assertTrue(variableDeclaration2.initializer.isValueAccumulatorLiteral());
+        assertEquals("sma50", variableDeclaration2.name);
+
+        IfStatement ifStatement1 = (IfStatement) stmts.get(2);
+
+        assertTrue(ifStatement1.condition.isBinary());
+        assertEquals(2, ifStatement1.body.size());
+        ExpressionStatement exprStmt = (ExpressionStatement) ifStatement1.body.get(0);
+        ExpressionStatement exprStmt2 = (ExpressionStatement) ifStatement1.body.get(1);
+        assertTrue(exprStmt.expression.isFunctionCall());
+        assertTrue(exprStmt2.expression.isFunctionCall());
+
+        IfStatement ifStatement2 = (IfStatement) stmts.get(3);
+        assertTrue(ifStatement2.condition.isBinary());
+        ExpressionStatement exprStmt3 = (ExpressionStatement) ifStatement1.body.get(0);
+        assertTrue(exprStmt3.expression.isFunctionCall());
+    }
+
+    @Test
+    public void foo2() {
+        List<Statement> stmts = parse("""
+                sma20 = sma(20)
+                sma50 = sma(50)
+                
+                if (crossover(sma20, sma50))
+                    createOrder("long", true, 10)
+                if (crossover(sma50, sma20))
+                    createOrder("position1", false, 10)
+                """);
+
+        assertEquals(4, stmts.size());
+        VariableDeclaration variableDeclaration1 = (VariableDeclaration) stmts.get(0);
+        assertTrue(variableDeclaration1.initializer.isValueAccumulatorLiteral());
+        assertTrue(variableDeclaration1.initializer.isFunctionCall());
+        assertEquals("sma20", variableDeclaration1.name);
+
+        VariableDeclaration variableDeclaration2 = (VariableDeclaration) stmts.get(1);
+        assertTrue(variableDeclaration2.initializer.isValueAccumulatorLiteral());
+        assertEquals("sma50", variableDeclaration2.name);
+
+        IfStatement ifStatement1 = (IfStatement) stmts.get(2);
+
+        assertTrue(ifStatement1.condition.isBinary());
+        assertEquals(2, ifStatement1.body.size());
+        ExpressionStatement exprStmt = (ExpressionStatement) ifStatement1.body.get(0);
+        ExpressionStatement exprStmt2 = (ExpressionStatement) ifStatement1.body.get(1);
+        assertTrue(exprStmt.expression.isFunctionCall());
+        assertTrue(exprStmt2.expression.isFunctionCall());
+
+        IfStatement ifStatement2 = (IfStatement) stmts.get(3);
+        assertTrue(ifStatement2.condition.isBinary());
+        ExpressionStatement exprStmt3 = (ExpressionStatement) ifStatement1.body.get(0);
+        assertTrue(exprStmt3.expression.isFunctionCall());
     }
 
     @Test
