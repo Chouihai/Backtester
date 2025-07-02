@@ -6,6 +6,7 @@ import HaitamStockProject.objects.Bar;
 import HaitamStockProject.objects.valueaccumulator.*;
 import HaitamStockProject.objects.valueaccumulator.key.ValueAccumulatorKeyBuilder;
 import HaitamStockProject.script.statements.expressions.FunctionCall;
+import HaitamStockProject.services.BusinessDayService;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -19,6 +20,7 @@ public class ScriptFunctionRegistryFactory {
 
     private final ValueAccumulatorCache valueAccumulatorCache;
     private final ValueAccumulatorFactory valueAccumulatorFactory;
+    private final BusinessDayService businessDayService;
     private final OrderCache orderCache;
     private final ValueAccumulatorKeyBuilder valueAccumulatorKeyBuilder = new ValueAccumulatorKeyBuilder();
     private final Logger logger = null; // TODO inject this later
@@ -27,16 +29,18 @@ public class ScriptFunctionRegistryFactory {
     @Inject()
     public ScriptFunctionRegistryFactory(OrderCache orderCache,
                                          ValueAccumulatorCache valueAccumulatorCache,
-                                         ValueAccumulatorFactory valueAccumulatorFactory) {
+                                         ValueAccumulatorFactory valueAccumulatorFactory,
+                                         BusinessDayService businessDayService) {
         this.orderCache = orderCache;
         this.valueAccumulatorCache = valueAccumulatorCache;
         this.valueAccumulatorFactory = valueAccumulatorFactory;
+        this.businessDayService = businessDayService;
     }
 
     public ScriptFunctionRegistry createRegistry(Map<String, Set<FunctionCall>> functionCalls, Bar startingBar) {
         ScriptFunctionRegistry registry = new ScriptFunctionRegistry();
         if (functionCalls.containsKey("createOrder")) {
-            CreateOrderFn fn = new CreateOrderFn(orderCache);
+            CreateOrderFn fn = new CreateOrderFn(orderCache,businessDayService);
             registry.register("createOrder", fn);
         }
         if (functionCalls.containsKey("sma")) {

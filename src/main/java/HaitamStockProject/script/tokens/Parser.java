@@ -11,7 +11,6 @@ public class Parser {
 
     private List<Token> tokens;
     private Map<String, Set<FunctionCall>> functionCalls;
-//    private Map<String, VariableDeclaration> variables ;
     private int current = 0;
     private final AtomicInteger seriesIds = new AtomicInteger(1);
 
@@ -19,7 +18,6 @@ public class Parser {
         Tokenizer tokenizer = new Tokenizer(s);
         tokens = tokenizer.tokenize();
         functionCalls = new HashMap<>();
-//        variables = new HashMap<>();
         List<Statement> statements = new ArrayList<>();
         while (!isAtEnd()) {
             while(check(TokenType.NEWLINE)) advance();
@@ -48,7 +46,6 @@ public class Parser {
         consume(TokenType.EQUALS, "Expected '=' after variable name.");
         Expression expr = parseExpression();
         VariableDeclaration var = new VariableDeclaration(name.lexeme, expr);
-//        variables.put(name.lexeme, var);
         return var;
     }
 

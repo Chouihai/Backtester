@@ -8,6 +8,7 @@ import HaitamStockProject.objects.order.OrderType;
 import HaitamStockProject.script.EvaluationContext;
 import HaitamStockProject.script.functions.result.ScriptFunctionResult;
 import HaitamStockProject.script.functions.result.VoidScriptFunctionResult;
+import HaitamStockProject.services.BusinessDayService;
 import org.slf4j.Logger;
 
 import java.time.LocalDate;
@@ -20,18 +21,20 @@ public class CreateOrderFn implements ScriptFunction {
     private final static int MINIMUM_ARGUMENTS_SIZE = 2; // Later on might want to have required vs optional args
     private final static int MAXIMUM_ARGUMENTS_SIZE = 3; // Later on might want to have required vs optional args
     private final OrderCache orderCache;
+    private final BusinessDayService businessDayService;
     private final String symbol = "AAPL"; // TODO Inject this later
     private final AtomicInteger idGenerator = new AtomicInteger(1); // Orders will exist entirely in memory
 
     // Use injection later
-    public CreateOrderFn(OrderCache orderCache) {
+    public CreateOrderFn(OrderCache orderCache, BusinessDayService businessDayService) {
         this.orderCache = orderCache;
+        this.businessDayService = businessDayService;
     }
 
     @Override
     public ScriptFunctionResult execute(List<Object> args, EvaluationContext context) {
         CreateOrderFnArguments arguments = validateArgs(args);
-        LocalDate date = context.currentBar().getDate();
+        LocalDate date = businessDayService.nextBusinessDay(context.currentBar().getDate());
         Order newOrder = new Order(idGenerator.getAndIncrement(), symbol, OrderStatus.SUBMITTED, OrderSide.BUY, OrderType.Market, 0.0, arguments.quantity(), date, arguments.name());
         orderCache.addOrder(newOrder);
         return new VoidScriptFunctionResult();

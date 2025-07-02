@@ -32,7 +32,7 @@ public class CrossoverDetector implements ValueAccumulator<Boolean> {
     }
 
     public void roll(Bar bar) {
-        double diff = va1.getValue() - va1.getValue();
+        double diff = va1.getValue() - va2.getValue();
         if (diff > 0) {
             previousSign = 1;
         } else if (diff < 0) {

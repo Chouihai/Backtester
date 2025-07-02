@@ -5,6 +5,7 @@ import HaitamStockProject.caches.InMemoryOrderCache;
 import HaitamStockProject.caches.MockPositionCache;
 import HaitamStockProject.objects.Bar;
 import HaitamStockProject.objects.SecurityDayValues;
+import HaitamStockProject.objects.order.Order;
 import HaitamStockProject.objects.valueaccumulator.CrossoverDetector;
 import HaitamStockProject.objects.valueaccumulator.ValueAccumulatorFactory;
 import HaitamStockProject.objects.valueaccumulator.key.CrossoverKey;
@@ -157,27 +158,83 @@ public class StrategyRunnerTest {
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
         ValueAccumulatorCache vaCache = injector.getInstance(ValueAccumulatorCache.class);
 
-        // We initial by setting sma20 lower than sma50
+        // We initialize by setting sma20 lower than sma50
         runner.initialize(script, "AAPL", new Bar(LocalDate.of(2024, 3, 14), 0, 0,0,90,0));
-        SmaCalculator va = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(20));
-        SmaCalculator va2 = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(50));
+        SmaCalculator sma20 = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(20));
+        SmaCalculator sma50 = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(50));
         CrossoverDetector cd1 = (CrossoverDetector) vaCache.getValueAccumulator(new CrossoverKey(new SmaKey(20), new SmaKey(50)));
         CrossoverDetector cd2 = (CrossoverDetector) vaCache.getValueAccumulator(new CrossoverKey(new SmaKey(50), new SmaKey(20)));
-        assertEquals(99.5, va.getAverage());
-        assertEquals(99.8, va2.getAverage());
+        assertEquals(99.5, sma20.getAverage());
+        assertEquals(99.8, sma50.getAverage());
         assertFalse(cd1.getValue()); // Should be false, no crossover can happen on initialization
         assertFalse(cd2.getValue()); // Should be false, no crossover can happen on initialization
 
 
         runner.roll(new Bar(LocalDate.of(2024, 3, 15), 0, 0,0,160,0));
-        assertEquals(102.5, va.getAverage());
-        assertEquals(101, va2.getAverage());
+        assertEquals(102.5, sma20.getAverage());
+        assertEquals(101, sma50.getAverage());
         assertTrue(cd1.getValue()); // 20 crosses over 50, should be true
         assertFalse(cd2.getValue());
 
 
         assertEquals(1, orderCache.snapshot().size());
-        orderCache.snapshot().values();
+
+        runner.roll(new Bar(LocalDate.of(2024, 3, 15), 0, 0,0,150,0));
+        assertEquals(105, sma20.getAverage()); // 20 still above 50
+        assertEquals(102, sma50.getAverage());
+
+        assertEquals(1, orderCache.snapshot().size());
+    }
+
+    @Test
+    void irlSimulation() {
+        String script = """
+                sma20 = sma(20)
+                sma50 = sma(50)
+
+                if (crossover(sma20, sma50))
+                    createOrder("long", true, 10)
+                if (crossover(sma50, sma20))
+                    createOrder("position1", false, 10)
+                """;
+
+        BarCache inMemoryBarCache = new InMemoryBarCache(businessDayService);
+
+
+        injector = Guice.createInjector(new MyModule(inMemoryBarCache));
+
+        LocalDate currentDate = LocalDate.of(2024, 1, 2);
+        LocalDate endDate = LocalDate.of(2025, 5, 1);
+
+        Map<LocalDate, Bar> initialValues = new HashMap<>();
+        for (int i = 0; i < 50; i++) {
+            initialValues.put(currentDate, bars.get(currentDate));
+            currentDate = businessDayService.nextBusinessDay(currentDate);
+        }
+        StrategyRunner runner = injector.getInstance(StrategyRunner.class);
+
+        inMemoryBarCache.loadCache(initialValues);
+        injector = Guice.createInjector(new MyModule(inMemoryBarCache));
+
+        runner.initialize(script, "AAPL", bars.get(currentDate));
+        currentDate = businessDayService.nextBusinessDay(currentDate);
+
+        while (currentDate.isBefore(endDate)) {
+            // First we check if we need to make any trades
+            runner.roll(bars.get(currentDate));
+            currentDate = businessDayService.nextBusinessDay(currentDate);
+        }
+        assertEquals(8, orderCache.snapshot().size());
+        List<Order> orders = new ArrayList<>(orderCache.snapshot().values());
+        orders.sort(Comparator.comparing(Order::tradeDate));
+        assertEquals(LocalDate.of(2024, 5, 9), orders.get(0).tradeDate());
+        assertEquals(LocalDate.of(2024, 8, 21), orders.get(1).tradeDate());
+        assertEquals(LocalDate.of(2024, 8, 30), orders.get(2).tradeDate());
+        assertEquals(LocalDate.of(2024, 11, 20), orders.get(3).tradeDate());
+        assertEquals(LocalDate.of(2024, 12, 4), orders.get(4).tradeDate());
+        assertEquals(LocalDate.of(2025, 1, 28), orders.get(5).tradeDate());
+        assertEquals(LocalDate.of(2025, 3, 7), orders.get(6).tradeDate());
+        assertEquals(LocalDate.of(2025, 3, 18), orders.get(7).tradeDate());
     }
 
     class MyModule extends AbstractModule {
