@@ -2,17 +2,14 @@ package HaitamStockProject;
 
 import HaitamStockProject.backtester.caches.*;
 import HaitamStockProject.caches.InMemoryOrderCache;
-import HaitamStockProject.caches.MockPositionCache;
 import HaitamStockProject.objects.Bar;
 import HaitamStockProject.objects.order.Order;
 import HaitamStockProject.objects.valueaccumulator.CrossoverDetector;
-import HaitamStockProject.objects.valueaccumulator.ValueAccumulatorFactory;
 import HaitamStockProject.objects.valueaccumulator.key.CrossoverKey;
 import HaitamStockProject.objects.valueaccumulator.key.SmaKey;
 import HaitamStockProject.services.BusinessDayService;
 import HaitamStockProject.services.MockBusinessDayService;
 import HaitamStockProject.objects.valueaccumulator.SmaCalculator;
-import HaitamStockProject.strategies.PositionManager;
 import HaitamStockProject.strategies.StrategyRunner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,7 +35,6 @@ public class StrategyRunnerTest {
     private static final Set<LocalDate> holidays = new HashSet<>();
     private final LocalDate startDate = LocalDate.of(2024, 1, 1);
     private final OrderCache orderCache = new InMemoryOrderCache();
-    private final PositionCache positionCache = new MockPositionCache();
     private final static Map<LocalDate, Bar> bars = new HashMap<>();
     private static BarCache barCache;
     private final ValueAccumulatorCache vaCache = new ValueAccumulatorCache();
@@ -252,7 +248,6 @@ public class StrategyRunnerTest {
         @Override
         protected void configure() {
             bind(BusinessDayService.class).toInstance(businessDayService);
-            bind(PositionCache.class).toInstance(positionCache);
             bind(OrderCache.class).toInstance(orderCache);
             bind(ValueAccumulatorCache.class).toInstance(vaCache);
             bind(BarCache.class).toInstance(inMemoryBarCache);

@@ -2,6 +2,8 @@ package HaitamStockProject.strategies;
 
 import HaitamStockProject.backtester.caches.OrderCache;
 import HaitamStockProject.objects.Bar;
+import HaitamStockProject.objects.Position;
+import HaitamStockProject.objects.Trade;
 import HaitamStockProject.objects.order.*;
 import com.google.inject.Inject;
 

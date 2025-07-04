@@ -1,6 +1,4 @@
-package HaitamStockProject.objects.order;
-
-import HaitamStockProject.objects.Bar;
+package HaitamStockProject.objects;
 
 import java.time.LocalDate;
 import java.util.Optional;
