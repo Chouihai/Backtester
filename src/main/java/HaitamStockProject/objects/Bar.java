@@ -1,46 +1,24 @@
 package HaitamStockProject.objects;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 
 public class Bar {
 
-    private final LocalDate date;
-    private final double open;
-    private final double high;
-    private final double low;
-    private final double close;
-    private final long volume;
+    public final LocalDate date;
+    public final double open;
+    public final double high;
+    public final double low;
+    public final double close;
+    public final long volume;
 
     public Bar(LocalDate date, double open, double high, double low, double close, long volume) {
         this.date = date;
-        this.open = open;
-        this.high = high;
-        this.low = low;
-        this.close = close;
+        this.open = BigDecimal.valueOf(open).setScale(2, RoundingMode.HALF_UP).doubleValue();
+        this.high = BigDecimal.valueOf(high).setScale(2, RoundingMode.HALF_UP).doubleValue();
+        this.low = BigDecimal.valueOf(low).setScale(2, RoundingMode.HALF_UP).doubleValue();
+        this.close = BigDecimal.valueOf(close).setScale(2, RoundingMode.HALF_UP).doubleValue();
         this.volume = volume;
-    }
-
-    public LocalDate getDate() {
-        return date;
-    }
-
-    public double getHigh() {
-        return high;
-    }
-
-    public double getOpen() {
-        return open;
-    }
-
-    public double getLow() {
-        return low;
-    }
-
-    public double getClose() {
-        return close;
-    }
-
-    public long getVolume() {
-        return volume;
     }
 }

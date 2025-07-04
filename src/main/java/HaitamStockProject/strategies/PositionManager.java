@@ -25,7 +25,7 @@ public class PositionManager {
         List<Order> openMarketOrders = orderCache.snapshot().values().stream().filter(order -> order.status() == OrderStatus.OPEN && order.orderType() == OrderType.Market).toList();
         if (!openMarketOrders.isEmpty()) {
             for (Order openOrder: openMarketOrders) {
-                Order filledOrder = openOrder.withFillPrice(bar.getOpen()).withOrderStatus(OrderStatus.FILLED);
+                Order filledOrder = openOrder.withFillPrice(bar.open).withOrderStatus(OrderStatus.FILLED);
                 orderCache.addOrder(filledOrder);
                 applyToPosition(filledOrder, bar);
             }

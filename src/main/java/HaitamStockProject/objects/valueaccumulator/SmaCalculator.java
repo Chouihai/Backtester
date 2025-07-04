@@ -15,19 +15,19 @@ public class SmaCalculator implements ValueAccumulator<Double> {
     public final int numDays;
     private final Queue<Double> values = new LinkedList<>();
     private double sumOfAllValues = 0.0;
-    private final List<Bar> initalValues;
+    private final List<Bar> initialValues;
 
     public SmaCalculator(int numDays, List<Bar> initialValues) {
         if (numDays <= 0 || initialValues.size() < numDays) throw new IllegalArgumentException();
-        this.initalValues = new ArrayList<>(initialValues);
+        this.initialValues = new ArrayList<>(initialValues);
         this.numDays = numDays;
-        for (Bar d : initialValues) {
-            this.addValue(d.getClose());
+        for (Bar bar : initialValues) {
+            this.addValue(bar.close);
         }
     }
 
     public void roll(Bar bar) {
-        addValue(bar.getClose());
+        addValue(bar.close);
     }
 
     // Probably make this private later
@@ -50,6 +50,6 @@ public class SmaCalculator implements ValueAccumulator<Double> {
     }
 
     public SmaCalculator copy() {
-        return new SmaCalculator(numDays, initalValues);
+        return new SmaCalculator(numDays, initialValues);
     }
 }

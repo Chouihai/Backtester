@@ -34,7 +34,7 @@ public class CreateOrderFn implements ScriptFunction {
     @Override
     public ScriptFunctionResult execute(List<Object> args, EvaluationContext context) {
         CreateOrderFnArguments arguments = validateArgs(args);
-        LocalDate date = businessDayService.nextBusinessDay(context.currentBar().getDate());
+        LocalDate date = businessDayService.nextBusinessDay(context.currentBar().date);
         Order newOrder = new Order(idGenerator.getAndIncrement(), symbol, OrderStatus.OPEN, arguments.side(), OrderType.Market, 0.0, 0.0, 0.0, arguments.quantity(), date, arguments.name());
         orderCache.addOrder(newOrder);
         return new VoidScriptFunctionResult();

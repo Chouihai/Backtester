@@ -34,7 +34,7 @@ public class Trade {
     }
 
     public LocalDate getEntryBarDate() {
-        return entry.getDate();
+        return entry.date;
     }
 
     public int getClosedQuantity() {
@@ -64,8 +64,8 @@ public class Trade {
     public double profit() {
         if (exit.isEmpty()) return 0;
         else {
-            double entryValue = entry.getOpen() * quantity;
-            double exitValue = exit.get().getOpen() * quantity;
+            double entryValue = entry.open * quantity;
+            double exitValue = exit.get().open * quantity;
             return exitValue - entryValue;
         }
     }

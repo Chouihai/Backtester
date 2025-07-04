@@ -30,7 +30,7 @@ public class InMemoryBarCache implements BarCache {
     @Override
     public List<Bar> getLastNDays(int days, Bar bar) {
         List <Bar> result = new LinkedList<>();
-        LocalDate currentDate = businessDayService.previousBusinessDay(bar.getDate());
+        LocalDate currentDate = businessDayService.previousBusinessDay(bar.date);
         for (int i = days;  i > 0; i--) {
             Bar b = this.bars.get(currentDate);
             if (b == null) throw new RuntimeException("Could not find bar for date " + currentDate);
