@@ -140,7 +140,7 @@
 //        assertEquals(1, trades.size());
 //        Order order = trades.get(0);
 //        assertEquals("AAPL", order.symbol());
-//        assertEquals(-10, order.signedQuantity());
+//        assertEquals(-10, order.quantity());
 //        assertEquals(111.0, order.price(), 0.0001);
 //
 //        // roll again to make sure it only makes orders at a cross
@@ -178,7 +178,7 @@
 //        assertEquals(1, trades.size());
 //        Order order = trades.get(0);
 //        assertEquals("AAPL", order.symbol());
-//        assertEquals(10, order.signedQuantity());
+//        assertEquals(10, order.quantity());
 //        assertEquals(111.0, order.price(), 0.0001);
 //
 //        // roll again to make sure it only makes orders at a cross
@@ -223,7 +223,7 @@
 //        assertEquals(1, trades.size());
 //        Order order = trades.get(0);
 //        assertEquals("AAPL", order.symbol());
-//        assertEquals(10, order.signedQuantity());
+//        assertEquals(10, order.quantity());
 //        assertEquals(111.0, order.price(), 0.0001);
 //    }
 //

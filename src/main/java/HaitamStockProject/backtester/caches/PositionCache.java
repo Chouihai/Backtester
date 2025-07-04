@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * In memory cache, does not read anything from a database
  */
-public interface PositionCache {
+public interface PositionCache { // Not needed atm, we only track one position per backtesting run
 
     void addPosition(Position position);
 

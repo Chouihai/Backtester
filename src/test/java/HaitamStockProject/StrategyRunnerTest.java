@@ -4,7 +4,6 @@ import HaitamStockProject.backtester.caches.*;
 import HaitamStockProject.caches.InMemoryOrderCache;
 import HaitamStockProject.caches.MockPositionCache;
 import HaitamStockProject.objects.Bar;
-import HaitamStockProject.objects.SecurityDayValues;
 import HaitamStockProject.objects.order.Order;
 import HaitamStockProject.objects.valueaccumulator.CrossoverDetector;
 import HaitamStockProject.objects.valueaccumulator.ValueAccumulatorFactory;
@@ -13,6 +12,7 @@ import HaitamStockProject.objects.valueaccumulator.key.SmaKey;
 import HaitamStockProject.services.BusinessDayService;
 import HaitamStockProject.services.MockBusinessDayService;
 import HaitamStockProject.objects.valueaccumulator.SmaCalculator;
+import HaitamStockProject.strategies.PositionManager;
 import HaitamStockProject.strategies.StrategyRunner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -80,16 +80,13 @@ public class StrategyRunnerTest {
                     .atZone(ZoneId.of("GMT"))
                     .toLocalDate();
 
-            SecurityDayValues value = new SecurityDayValues(
-                    1,
+            Bar value = new Bar(
                     date,
                     open,
                     0.0, // high
                     0.0, // low
                     close,
-                    0L,  // volume
-                    0.0, // vwap
-                    0    // numTrades
+                    0L
             );
 
             bars.put(date, value);
@@ -193,9 +190,9 @@ public class StrategyRunnerTest {
                 sma50 = sma(50)
 
                 if (crossover(sma20, sma50))
-                    createOrder("long", true, 10)
+                    createOrder("long", true, 1000)
                 if (crossover(sma50, sma20))
-                    createOrder("position1", false, 10)
+                    createOrder("position1", false, 1000)
                 """;
 
         BarCache inMemoryBarCache = new InMemoryBarCache(businessDayService);
@@ -214,7 +211,6 @@ public class StrategyRunnerTest {
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
 
         inMemoryBarCache.loadCache(initialValues);
-        injector = Guice.createInjector(new MyModule(inMemoryBarCache));
 
         runner.initialize(script, "AAPL", bars.get(currentDate));
         currentDate = businessDayService.nextBusinessDay(currentDate);
@@ -235,6 +231,10 @@ public class StrategyRunnerTest {
         assertEquals(LocalDate.of(2025, 1, 28), orders.get(5).tradeDate());
         assertEquals(LocalDate.of(2025, 3, 7), orders.get(6).tradeDate());
         assertEquals(LocalDate.of(2025, 3, 18), orders.get(7).tradeDate());
+
+        assertEquals(43_960.00, runner.grossProfit());
+        assertEquals(35_100.00, runner.grossLoss());
+        assertEquals(8_860.00, runner.netProfit());
     }
 
     class MyModule extends AbstractModule {

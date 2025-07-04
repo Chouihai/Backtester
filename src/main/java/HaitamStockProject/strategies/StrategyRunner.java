@@ -15,12 +15,15 @@ public class StrategyRunner {
     private ScriptEvaluator evaluator;
     private final ScriptFunctionRegistryFactory scriptFunctionRegistryFactory;
     private final ValueAccumulatorCache valueAccumulatorCache;
+    private final PositionManager positionManager;
 
     @Inject()
     public StrategyRunner(ScriptFunctionRegistryFactory scriptFunctionRegistryFactory,
-                          ValueAccumulatorCache valueAccumulatorCache) {
+                          ValueAccumulatorCache valueAccumulatorCache,
+                          PositionManager positionManager) {
         this.scriptFunctionRegistryFactory = scriptFunctionRegistryFactory;
         this.valueAccumulatorCache = valueAccumulatorCache;
+        this.positionManager = positionManager;
     }
 
     /**
@@ -39,6 +42,19 @@ public class StrategyRunner {
      */
     public void roll(Bar bar) {
         this.valueAccumulatorCache.roll(bar);
+        this.positionManager.roll(bar);
         evaluator.evaluate(new EvaluationContext(bar));
+    }
+
+    public double netProfit() {
+        return positionManager.netProfit();
+    }
+
+    public double grossProfit() {
+        return positionManager.grossProfit();
+    }
+
+    public double grossLoss() {
+        return positionManager.grossLoss();
     }
 }

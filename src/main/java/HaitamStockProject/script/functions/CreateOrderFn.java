@@ -35,7 +35,7 @@ public class CreateOrderFn implements ScriptFunction {
     public ScriptFunctionResult execute(List<Object> args, EvaluationContext context) {
         CreateOrderFnArguments arguments = validateArgs(args);
         LocalDate date = businessDayService.nextBusinessDay(context.currentBar().getDate());
-        Order newOrder = new Order(idGenerator.getAndIncrement(), symbol, OrderStatus.SUBMITTED, OrderSide.BUY, OrderType.Market, 0.0, arguments.quantity(), date, arguments.name());
+        Order newOrder = new Order(idGenerator.getAndIncrement(), symbol, OrderStatus.OPEN, arguments.side(), OrderType.Market, 0.0, 0.0, 0.0, arguments.quantity(), date, arguments.name());
         orderCache.addOrder(newOrder);
         return new VoidScriptFunctionResult();
     }
@@ -49,9 +49,10 @@ public class CreateOrderFn implements ScriptFunction {
         if (nameArg == null) {
             name = "";
         } else name = nameArg.toString();
-        boolean isBuy = Boolean.getBoolean(args.get(1).toString());
+        boolean isBuy = (Boolean) args.get(1);
         OrderSide side = (isBuy) ? OrderSide.BUY : OrderSide.SELL;
         int quantity = Integer.parseInt(args.get(2).toString());
+        if (quantity <= 0) throw new RuntimeException("Negative quantity in CreateOrderFn");
         return new CreateOrderFnArguments(name, side, quantity);
     }
 }
