@@ -4,61 +4,64 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 public class Trade {
-    public enum Direction { LONG, SHORT }
-
-    final int quantity;
-    final Bar entry;
-
-    private int closedQuantity;
-    private Direction direction;
+    public enum TradeDirection { LONG, SHORT }
+    private int quantity;
+    public final Bar entry;
+    private final TradeDirection tradeDirection;
     private Optional<Bar> exit;
 
-    public Trade(Bar entry, int quantity, Direction direction) {
+    public Trade(Bar entry, int quantity, TradeDirection tradeDirection) {
         this.entry = entry;
         this.quantity = quantity;
-        this.direction = direction;
+        this.tradeDirection = tradeDirection;
         this.exit = Optional.empty();
     }
 
     public void close(Bar exit) {
         this.exit = Optional.of(exit);
-        this.closedQuantity = quantity;
+    }
+
+    /**
+     * Closes this trade with the partial quantity. Returns the remaining quantity as a new open trade.
+     */
+    public Trade partialClose(Bar exit, int quantity) {
+        if (quantity > this.quantity) throw new IllegalArgumentException("Can't partial close more than or equal the full quantity of the trade.");
+        this.exit = Optional.of(exit);
+        int oldQuantity = this.quantity;
+        this.quantity = quantity;
+        return new Trade(entry, oldQuantity - quantity, tradeDirection);
+    }
+
+    public int getQuantity() {
+        return quantity;
     }
 
     public Optional<Bar> getExit() {
         return exit;
     }
 
-    public Direction getDirection() {
-        return direction;
+    public TradeDirection getDirection() {
+        return tradeDirection;
     }
 
     public LocalDate getEntryBarDate() {
         return entry.date;
     }
 
-    public int getClosedQuantity() {
-        return closedQuantity;
-    }
-
-    public void setClosedQuantity(int closedQuantity) {
-        this.closedQuantity = closedQuantity;
-    }
-
     public boolean isLong() {
-        return direction == Direction.LONG;
+        return tradeDirection == TradeDirection.LONG;
     }
 
     public boolean isShort() {
-        return direction == Direction.SHORT;
-    }
-
-    public int openQuantity() {
-        return quantity - closedQuantity;
+        return tradeDirection == TradeDirection.SHORT;
     }
 
     public boolean isOpen() {
         return exit.isEmpty();
+    }
+
+    public boolean isClosed() {
+        return !isOpen();
     }
 
     public double profit() {
@@ -69,6 +72,4 @@ public class Trade {
             return exitValue - entryValue;
         }
     }
-
-    // TODO: Convert the Bar fields to BigDecimals rounded to 2 decimal places
 }

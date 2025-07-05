@@ -10,6 +10,7 @@ import HaitamStockProject.objects.valueaccumulator.key.SmaKey;
 import HaitamStockProject.services.BusinessDayService;
 import HaitamStockProject.services.MockBusinessDayService;
 import HaitamStockProject.objects.valueaccumulator.SmaCalculator;
+import HaitamStockProject.strategies.PositionManager;
 import HaitamStockProject.strategies.StrategyRunner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -193,7 +194,6 @@ public class StrategyRunnerTest {
 
         BarCache inMemoryBarCache = new InMemoryBarCache(businessDayService);
 
-
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
 
         LocalDate currentDate = LocalDate.of(2024, 1, 2);
@@ -205,13 +205,14 @@ public class StrategyRunnerTest {
             currentDate = businessDayService.nextBusinessDay(currentDate);
         }
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
+        PositionManager positionManager = injector.getInstance(PositionManager.class);
 
         inMemoryBarCache.loadCache(initialValues);
 
         runner.initialize(script, "AAPL", bars.get(currentDate));
         currentDate = businessDayService.nextBusinessDay(currentDate);
 
-        while (currentDate.isBefore(endDate)) {
+        while (currentDate.isBefore(endDate) || currentDate.equals(endDate)) {
             // First we check if we need to make any trades
             runner.roll(bars.get(currentDate));
             currentDate = businessDayService.nextBusinessDay(currentDate);
@@ -228,10 +229,122 @@ public class StrategyRunnerTest {
         assertEquals(LocalDate.of(2025, 3, 7), orders.get(6).tradeDate());
         assertEquals(LocalDate.of(2025, 3, 18), orders.get(7).tradeDate());
 
-        assertEquals(43_960.00, runner.grossProfit());
-        assertEquals(35_100.00, runner.grossLoss());
-        assertEquals(8_860.00, runner.netProfit());
+        assertEquals(0, positionManager.openTrades());
+        assertEquals(4, positionManager.closedTrades());
+        assertEquals(43_960.00, positionManager.grossProfit());
+        assertEquals(35_100.00, positionManager.grossLoss());
+        assertEquals(8_860.00, positionManager.netProfit());
     }
+
+    @Test
+    void irlSimulation2() {
+        String script = """
+                sma20 = sma(20)
+                sma50 = sma(50)
+
+                if (crossover(sma20, sma50))
+                    createOrder("long", true, 1000)
+                if (crossover(sma50, sma20))
+                    createOrder("position1", false, 500)
+                """;
+
+        BarCache inMemoryBarCache = new InMemoryBarCache(businessDayService);
+
+
+        injector = Guice.createInjector(new MyModule(inMemoryBarCache));
+
+        LocalDate currentDate = LocalDate.of(2024, 1, 2);
+        LocalDate endDate = LocalDate.of(2025, 5, 1);
+
+        Map<LocalDate, Bar> initialValues = new HashMap<>();
+        for (int i = 0; i < 50; i++) {
+            initialValues.put(currentDate, bars.get(currentDate));
+            currentDate = businessDayService.nextBusinessDay(currentDate);
+        }
+        StrategyRunner runner = injector.getInstance(StrategyRunner.class);
+        PositionManager positionManager = injector.getInstance(PositionManager.class);
+
+        inMemoryBarCache.loadCache(initialValues);
+
+        runner.initialize(script, "AAPL", bars.get(currentDate));
+        currentDate = businessDayService.nextBusinessDay(currentDate);
+
+        while (currentDate.isBefore(endDate) || currentDate.equals(endDate)) {
+            // First we check if we need to make any trades
+            runner.roll(bars.get(currentDate));
+            currentDate = businessDayService.nextBusinessDay(currentDate);
+        }
+        assertEquals(8, orderCache.snapshot().size());
+
+        assertEquals(2, positionManager.openTrades());
+        assertEquals(4, positionManager.closedTrades());
+        assertEquals(45_060.00, positionManager.grossProfit());
+        assertEquals(8_015.00, positionManager.grossLoss());
+        assertEquals(37_045.00, positionManager.netProfit());
+        assertEquals(-59_820, positionManager.openPnL());
+    }
+
+    @Test
+    void irlSimulation3() {
+        String script = """
+                sma20 = sma(20)
+                sma50 = sma(50)
+
+                if (crossover(sma20, sma50))
+                    createOrder("long", true, 500)
+                    createOrder("long2", true, 500)
+                if (crossover(sma50, sma20))
+                    createOrder("position1", false, 1000)
+                """;
+
+        BarCache inMemoryBarCache = new InMemoryBarCache(businessDayService);
+
+        injector = Guice.createInjector(new MyModule(inMemoryBarCache));
+
+        LocalDate currentDate = LocalDate.of(2024, 1, 2);
+        LocalDate endDate = LocalDate.of(2025, 5, 1);
+
+        Map<LocalDate, Bar> initialValues = new HashMap<>();
+        for (int i = 0; i < 50; i++) {
+            initialValues.put(currentDate, bars.get(currentDate));
+            currentDate = businessDayService.nextBusinessDay(currentDate);
+        }
+        StrategyRunner runner = injector.getInstance(StrategyRunner.class);
+        PositionManager positionManager = injector.getInstance(PositionManager.class);
+
+        inMemoryBarCache.loadCache(initialValues);
+
+        runner.initialize(script, "AAPL", bars.get(currentDate));
+        currentDate = businessDayService.nextBusinessDay(currentDate);
+
+        while (currentDate.isBefore(endDate) || currentDate.equals(endDate)) {
+            // First we check if we need to make any trades
+            runner.roll(bars.get(currentDate));
+            currentDate = businessDayService.nextBusinessDay(currentDate);
+        }
+        assertEquals(12, orderCache.snapshot().size());
+        List<Order> orders = new ArrayList<>(orderCache.snapshot().values());
+        orders.sort(Comparator.comparing(Order::tradeDate));
+        assertEquals(LocalDate.of(2024, 5, 9), orders.get(0).tradeDate());
+        assertEquals(LocalDate.of(2024, 5, 9), orders.get(1).tradeDate());
+        assertEquals(LocalDate.of(2024, 8, 21), orders.get(2).tradeDate());
+        assertEquals(LocalDate.of(2024, 8, 30), orders.get(3).tradeDate());
+        assertEquals(LocalDate.of(2024, 8, 30), orders.get(4).tradeDate());
+        assertEquals(LocalDate.of(2024, 11, 20), orders.get(5).tradeDate());
+        assertEquals(LocalDate.of(2024, 12, 4), orders.get(6).tradeDate());
+        assertEquals(LocalDate.of(2024, 12, 4), orders.get(7).tradeDate());
+        assertEquals(LocalDate.of(2025, 1, 28), orders.get(8).tradeDate());
+        assertEquals(LocalDate.of(2025, 3, 7), orders.get(9).tradeDate());
+        assertEquals(LocalDate.of(2025, 3, 7), orders.get(10).tradeDate());
+        assertEquals(LocalDate.of(2025, 3, 18), orders.get(11).tradeDate());
+
+        assertEquals(0, positionManager.openTrades());
+        assertEquals(8, positionManager.closedTrades());
+        assertEquals(43_960.00, positionManager.grossProfit());
+        assertEquals(35_100.00, positionManager.grossLoss());
+        assertEquals(8_860.00, positionManager.netProfit());
+    }
+
 
     class MyModule extends AbstractModule {
 

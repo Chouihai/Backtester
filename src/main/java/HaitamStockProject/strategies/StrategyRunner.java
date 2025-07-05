@@ -45,16 +45,4 @@ public class StrategyRunner {
         this.positionManager.roll(bar);
         evaluator.evaluate(new EvaluationContext(bar));
     }
-
-    public double netProfit() {
-        return positionManager.netProfit();
-    }
-
-    public double grossProfit() {
-        return positionManager.grossProfit();
-    }
-
-    public double grossLoss() {
-        return positionManager.grossLoss();
-    }
 }

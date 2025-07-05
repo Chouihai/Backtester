@@ -36,29 +36,6 @@ public class Position {
         return sum;
     }
 
-    public double grossProfit() {
-        List<Trade> closedTrades = trades.stream().filter(trade -> !trade.isOpen()).toList();
-        double sum = 0;
-        for (Trade trade: closedTrades) {
-            double profit = trade.profit();
-            if (profit > 0) {
-                sum += profit;
-            }
-        }
-        return sum;
-    }
-    public double grossLoss() {
-        List<Trade> closedTrades = trades.stream().filter(trade -> !trade.isOpen()).toList();
-        double sum = 0;
-        for (Trade trade: closedTrades) {
-            double profit = trade.profit();
-            if (profit < 0) {
-                sum += profit;
-            }
-        }
-        return Math.abs(sum);
-    }
-
     public Direction getDirection() {
         return direction;
     }
@@ -73,5 +50,9 @@ public class Position {
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
+    }
+
+    public List<Trade> getTrades() {
+        return new ArrayList<>(trades);
     }
 }
