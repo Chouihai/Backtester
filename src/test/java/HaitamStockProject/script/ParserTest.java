@@ -126,7 +126,7 @@ public class ParserTest {
     }
 
     @Test
-    public void foo() {
+    public void testSmaAndOrderParsing() {
         List<Statement> stmts = parse("""
                 sma20 = sma(20)
                 sma50 = sma(50)
@@ -140,12 +140,11 @@ public class ParserTest {
 
         assertEquals(4, stmts.size());
         VariableDeclaration variableDeclaration1 = (VariableDeclaration) stmts.get(0);
-        assertTrue(variableDeclaration1.initializer.isValueAccumulatorLiteral());
-        assertTrue(variableDeclaration1.initializer.isLiteral());
+        assertTrue(variableDeclaration1.initializer.isFunctionCall());
         assertEquals("sma20", variableDeclaration1.name);
 
         VariableDeclaration variableDeclaration2 = (VariableDeclaration) stmts.get(1);
-        assertTrue(variableDeclaration2.initializer.isValueAccumulatorLiteral());
+        assertTrue(variableDeclaration2.initializer.isFunctionCall());
         assertEquals("sma50", variableDeclaration2.name);
 
         IfStatement ifStatement1 = (IfStatement) stmts.get(2);
@@ -164,7 +163,7 @@ public class ParserTest {
     }
 
     @Test
-    public void foo2() {
+    public void testCrossoverAndOrderParsing() {
         List<Statement> stmts = parse("""
                 sma20 = sma(20)
                 sma50 = sma(50)
@@ -177,26 +176,23 @@ public class ParserTest {
 
         assertEquals(4, stmts.size());
         VariableDeclaration variableDeclaration1 = (VariableDeclaration) stmts.get(0);
-        assertTrue(variableDeclaration1.initializer.isValueAccumulatorLiteral());
         assertTrue(variableDeclaration1.initializer.isFunctionCall());
         assertEquals("sma20", variableDeclaration1.name);
 
         VariableDeclaration variableDeclaration2 = (VariableDeclaration) stmts.get(1);
-        assertTrue(variableDeclaration2.initializer.isValueAccumulatorLiteral());
+        assertTrue(variableDeclaration2.initializer.isFunctionCall());
         assertEquals("sma50", variableDeclaration2.name);
 
         IfStatement ifStatement1 = (IfStatement) stmts.get(2);
 
-        assertTrue(ifStatement1.condition.isBinary());
-        assertEquals(2, ifStatement1.body.size());
+        assertTrue(ifStatement1.condition.isFunctionCall());
+        assertEquals(1, ifStatement1.body.size());
         ExpressionStatement exprStmt = (ExpressionStatement) ifStatement1.body.get(0);
-        ExpressionStatement exprStmt2 = (ExpressionStatement) ifStatement1.body.get(1);
         assertTrue(exprStmt.expression.isFunctionCall());
-        assertTrue(exprStmt2.expression.isFunctionCall());
 
         IfStatement ifStatement2 = (IfStatement) stmts.get(3);
-        assertTrue(ifStatement2.condition.isBinary());
-        ExpressionStatement exprStmt3 = (ExpressionStatement) ifStatement1.body.get(0);
+        assertTrue(ifStatement2.condition.isFunctionCall());
+        ExpressionStatement exprStmt3 = (ExpressionStatement) ifStatement2.body.get(0);
         assertTrue(exprStmt3.expression.isFunctionCall());
     }
 
