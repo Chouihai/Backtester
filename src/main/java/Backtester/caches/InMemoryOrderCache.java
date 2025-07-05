@@ -1,6 +1,5 @@
 package Backtester.caches;
 
-import Backtester.caches.OrderCache;
 import Backtester.objects.order.Order;
 
 import java.util.*;
@@ -34,4 +33,4 @@ public class InMemoryOrderCache implements OrderCache {
     public Map<Integer, Order> snapshot() {
         return orderMap;
     }
-}
+} 

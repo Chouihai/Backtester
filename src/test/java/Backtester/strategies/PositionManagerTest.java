@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PositionManagerTest {
 
     private PositionManager positionManager;
-    private Backtester.caches.OrderCache orderCache;
+    private OrderCache orderCache;
     private LocalDate testDate;
     private Bar testBar;
 
