@@ -13,6 +13,8 @@ public class CloseOrderFn implements ScriptFunction {
 //    private final BacktestRunPositionCache positionCache;
 
 
+    // When there is no quantity and just an Id. It should create a reverse order with the quantity of the order with that Id.
+
     public CloseOrderFn(OrderCache orderCache) {
         this.orderCache = orderCache;
     }

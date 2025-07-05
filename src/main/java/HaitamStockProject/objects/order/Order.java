@@ -13,18 +13,14 @@ public record Order(int id,
                     double fillPrice,
                     int quantity,
                     LocalDate tradeDate,
-                    String group) {
-
-    public Order withGroup(String group) {
-        return new Order(id, symbol, status, side, orderType, limitPrice, stopPrice, fillPrice, quantity, tradeDate, group);
-    }
+                    String label) {
 
     public Order withFillPrice(double price) {
-        return new Order(id, symbol, status, side, orderType, limitPrice, stopPrice, price, quantity, tradeDate, group);
+        return new Order(id, symbol, status, side, orderType, limitPrice, stopPrice, price, quantity, tradeDate, label);
     }
 
     public Order withOrderStatus(OrderStatus status) {
-        return new Order(id, symbol, status, side, orderType, limitPrice, stopPrice, fillPrice, quantity, tradeDate, group);
+        return new Order(id, symbol, status, side, orderType, limitPrice, stopPrice, fillPrice, quantity, tradeDate, label);
     }
 }
 

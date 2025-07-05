@@ -345,6 +345,54 @@ public class StrategyRunnerTest {
         assertEquals(8_860.00, positionManager.netProfit());
     }
 
+    @Test
+    void irlSimulation4() {
+        String script = """
+                sma20 = sma(20)
+                sma50 = sma(50)
+
+                if (crossover(sma20, sma50))
+                    createOrder("A", true, 600)
+                    createOrder("B", true, 500)
+                if (crossover(sma50, sma20))
+                    createOrder("position1", false, 500)
+                """;
+
+        BarCache inMemoryBarCache = new InMemoryBarCache(businessDayService);
+
+        injector = Guice.createInjector(new MyModule(inMemoryBarCache));
+
+        LocalDate currentDate = LocalDate.of(2024, 1, 2);
+        LocalDate endDate = LocalDate.of(2025, 5, 1);
+
+        Map<LocalDate, Bar> initialValues = new HashMap<>();
+        for (int i = 0; i < 50; i++) {
+            initialValues.put(currentDate, bars.get(currentDate));
+            currentDate = businessDayService.nextBusinessDay(currentDate);
+        }
+        StrategyRunner runner = injector.getInstance(StrategyRunner.class);
+        PositionManager positionManager = injector.getInstance(PositionManager.class);
+
+        inMemoryBarCache.loadCache(initialValues);
+
+        runner.initialize(script, "AAPL", bars.get(currentDate));
+        currentDate = businessDayService.nextBusinessDay(currentDate);
+
+        while (currentDate.isBefore(endDate) || currentDate.equals(endDate)) {
+            // First we check if we need to make any trades
+            runner.roll(bars.get(currentDate));
+            currentDate = businessDayService.nextBusinessDay(currentDate);
+        }
+        assertEquals(12, orderCache.snapshot().size());
+        List<Order> orders = new ArrayList<>(orderCache.snapshot().values());
+        orders.sort(Comparator.comparing(Order::tradeDate));
+
+        assertEquals(5, positionManager.openTrades());
+        assertEquals(7, positionManager.closedTrades());
+        assertEquals(49_823.00, positionManager.grossProfit());
+        assertEquals(8_015.00, positionManager.grossLoss());
+        assertEquals(41_808.00, positionManager.netProfit());
+    }
 
     class MyModule extends AbstractModule {
 

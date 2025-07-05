@@ -9,6 +9,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Singleton
@@ -17,6 +18,7 @@ public class PositionManager {
     private final OrderCache orderCache; // Orders will be filled immediately at the next open. Any order with status
     private final Position position;
     private Bar currentBar;
+    private static final Comparator<Trade> TRADE_ORDERING = Comparator.comparing(Trade::getEntryBarDate).thenComparing(Trade::getOrderId);
 
     @Inject
     public PositionManager(OrderCache orderCache) {
@@ -58,6 +60,13 @@ public class PositionManager {
         return sum;
     }
 
+    public List<Trade> getSortedOpenTrades() {
+        return position.getTrades().stream()
+                .filter(trade -> trade.getExit().isEmpty())
+                .sorted(TRADE_ORDERING).toList();
+    }
+
+
     public double grossLoss() {
         List<Trade> closedTrades = position.getTrades().stream().filter(trade -> !trade.isOpen()).toList();
         double sum = 0;
@@ -97,15 +106,15 @@ public class PositionManager {
                 if (dir == Position.Direction.FLAT) { // enter open position
                     position.setDirection(Position.Direction.LONG);
                     position.setQuantity(order.quantity());
-                    Trade newTrade = new Trade(bar, order.quantity(), Trade.TradeDirection.LONG);
+                    Trade newTrade = new Trade(bar, order.quantity(), Trade.TradeDirection.LONG, order.label());
                     position.addTrade(newTrade);
                 } else if (dir == Position.Direction.LONG) { // extending open position
                     int qty = position.getQuantity() + order.quantity();
                     position.setQuantity(qty);
-                    Trade newTrade = new Trade(bar, order.quantity(), Trade.TradeDirection.LONG);
+                    Trade newTrade = new Trade(bar, order.quantity(), Trade.TradeDirection.LONG, order.label());
                     position.addTrade(newTrade);
                 } else { // Position is short
-                    List<Trade> sortedOpenTrades = position.getSortedOpenTrades();
+                    List<Trade> sortedOpenTrades = getSortedOpenTrades();
                     if (order.quantity() < position.getQuantity()) { // no opening needed here, entire order quantity will be absorbed
                         closeOrderQuantityFromPosition(order, bar, sortedOpenTrades, Trade.TradeDirection.SHORT);
                     } else if (position.getQuantity() == order.quantity()) { // no opening needed here either, entire order quantity should be absorbed
@@ -121,7 +130,7 @@ public class PositionManager {
                         }
                         position.setDirection(Position.Direction.LONG);
                         position.setQuantity(leftover);
-                        Trade newTrade = new Trade(bar, leftover, Trade.TradeDirection.LONG);
+                        Trade newTrade = new Trade(bar, leftover, Trade.TradeDirection.LONG, order.label());
                         position.addTrade(newTrade);
                     }
                 }
@@ -130,15 +139,15 @@ public class PositionManager {
                 if (dir == Position.Direction.FLAT) { // opening short position
                     position.setDirection(Position.Direction.SHORT);
                     position.setQuantity(order.quantity());
-                    Trade newTrade = new Trade(bar, order.quantity(), Trade.TradeDirection.SHORT);
+                    Trade newTrade = new Trade(bar, order.quantity(), Trade.TradeDirection.SHORT, order.label());
                     position.addTrade(newTrade);
                 } else if (dir == Position.Direction.SHORT) { // extending short position
                     int newQty = position.getQuantity() + order.quantity();
                     position.setQuantity(newQty);
-                    Trade newTrade = new Trade(bar, order.quantity(), Trade.TradeDirection.SHORT);
+                    Trade newTrade = new Trade(bar, order.quantity(), Trade.TradeDirection.SHORT, order.label());
                     position.addTrade(newTrade);
                 } else {
-                    List<Trade> sortedOpenTrades = position.getSortedOpenTrades();
+                    List<Trade> sortedOpenTrades = getSortedOpenTrades();
                     if (order.quantity() < position.getQuantity()) {
                         closeOrderQuantityFromPosition(order, bar, sortedOpenTrades, Trade.TradeDirection.LONG);
                     } else if (order.quantity() == position.getQuantity()) {
@@ -154,7 +163,7 @@ public class PositionManager {
                         }
                         position.setDirection(Position.Direction.SHORT);
                         position.setQuantity(leftover);
-                        Trade newTrade = new Trade(bar, leftover, Trade.TradeDirection.SHORT);
+                        Trade newTrade = new Trade(bar, leftover, Trade.TradeDirection.SHORT, order.label());
                         position.addTrade(newTrade);
                     }
                 }

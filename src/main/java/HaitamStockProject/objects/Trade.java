@@ -9,12 +9,14 @@ public class Trade {
     public final Bar entry;
     private final TradeDirection tradeDirection;
     private Optional<Bar> exit;
+    public final String orderId;
 
-    public Trade(Bar entry, int quantity, TradeDirection tradeDirection) {
+    public Trade(Bar entry, int quantity, TradeDirection tradeDirection, String orderId) {
         this.entry = entry;
         this.quantity = quantity;
         this.tradeDirection = tradeDirection;
         this.exit = Optional.empty();
+        this.orderId = orderId;
     }
 
     public void close(Bar exit) {
@@ -29,7 +31,7 @@ public class Trade {
         this.exit = Optional.of(exit);
         int oldQuantity = this.quantity;
         this.quantity = quantity;
-        return new Trade(entry, oldQuantity - quantity, tradeDirection);
+        return new Trade(entry, oldQuantity - quantity, tradeDirection, orderId);
     }
 
     public int getQuantity() {
@@ -72,4 +74,9 @@ public class Trade {
             return exitValue - entryValue;
         }
     }
+
+    public String getOrderId() {
+        return orderId;
+    }
+
 }

@@ -23,10 +23,6 @@ public class Position {
         trades.add(trade);
     }
 
-    public List<Trade> getSortedOpenTrades() {
-        return trades.stream().filter(trade -> trade.getExit().isEmpty()).sorted(Comparator.comparing(Trade::getEntryBarDate)).collect(Collectors.toList());
-    }
-
     public double netProfit() {
         List<Trade> closedTrades = trades.stream().filter(trade -> !trade.isOpen()).toList();
         double sum = 0;

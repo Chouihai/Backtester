@@ -24,7 +24,7 @@ public class InMemoryOrderCache implements OrderCache {
     }
 
     public Set<Order> getOrders(String group) {
-        return orderMap.values().stream().filter(order -> Objects.equals(order.group(), group)).collect(Collectors.toSet());
+        return orderMap.values().stream().filter(order -> Objects.equals(order.label(), group)).collect(Collectors.toSet());
     }
 
     public Order getOrder(int id) {
