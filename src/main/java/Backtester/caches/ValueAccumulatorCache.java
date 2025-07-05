@@ -1,4 +1,4 @@
-package Backtester.backtester.caches;
+package Backtester.caches;
 
 import Backtester.objects.Bar;
 import Backtester.objects.valueaccumulator.ValueAccumulator;
@@ -32,5 +32,4 @@ public class ValueAccumulatorCache {
     public void roll(Bar bar) {
         valueAccumulators.values().forEach(va -> va.roll(bar));
     }
-}
-
+} 

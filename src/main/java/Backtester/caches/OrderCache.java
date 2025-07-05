@@ -1,4 +1,4 @@
-package Backtester.backtester.caches;
+package Backtester.caches;
 
 import Backtester.objects.order.Order;
 
@@ -17,4 +17,4 @@ public interface OrderCache {
     Set<Order> getOrders(String grouping);
 
     Map<Integer, Order> snapshot();
-}
+} 

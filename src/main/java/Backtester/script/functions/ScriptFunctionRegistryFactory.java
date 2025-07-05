@@ -1,7 +1,7 @@
 package Backtester.script.functions;
 
-import Backtester.backtester.caches.OrderCache;
-import Backtester.backtester.caches.ValueAccumulatorCache;
+import Backtester.caches.OrderCache;
+import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.Bar;
 import Backtester.objects.valueaccumulator.*;
 import Backtester.objects.valueaccumulator.key.ValueAccumulatorKeyBuilder;

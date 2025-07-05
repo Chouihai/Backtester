@@ -2,7 +2,7 @@ package Backtester.strategies;
 
 import Backtester.caches.InMemoryOrderCache;
 import Backtester.strategies.PositionManager;
-import Backtester.backtester.caches.OrderCache;
+import Backtester.caches.OrderCache;
 import Backtester.objects.Bar;
 import Backtester.objects.Position;
 import Backtester.objects.Trade;
@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PositionManagerTest {
 
     private PositionManager positionManager;
-    private Backtester.backtester.caches.OrderCache orderCache;
+    private Backtester.caches.OrderCache orderCache;
     private LocalDate testDate;
     private Bar testBar;
 

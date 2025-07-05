@@ -1,4 +1,4 @@
-package Backtester.backtester.caches;
+package Backtester.caches;
 
 import Backtester.objects.Bar;
 
@@ -11,4 +11,4 @@ public interface BarCache {
     void loadCache(Map<LocalDate, Bar> bars);
 
     List<Bar> getLastNDays(int days, Bar bar);
-}
+} 

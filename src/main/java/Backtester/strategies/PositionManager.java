@@ -1,6 +1,6 @@
 package Backtester.strategies;
 
-import Backtester.backtester.caches.OrderCache;
+import Backtester.caches.OrderCache;
 import Backtester.objects.Bar;
 import Backtester.objects.Position;
 import Backtester.objects.Trade;

@@ -1,6 +1,6 @@
 package Backtester.script;
 
-import Backtester.backtester.caches.ValueAccumulatorCache;
+import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.CompiledScript;
 import Backtester.objects.valueaccumulator.ValueAccumulator;
 import Backtester.script.functions.*;

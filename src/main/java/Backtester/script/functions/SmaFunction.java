@@ -1,6 +1,6 @@
 package Backtester.script.functions;
 
-import Backtester.backtester.caches.ValueAccumulatorCache;
+import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.valueaccumulator.ValueAccumulatorFactory;
 import Backtester.objects.valueaccumulator.ValueAccumulatorType;
 import Backtester.objects.valueaccumulator.key.SmaKey;

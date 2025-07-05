@@ -1,4 +1,4 @@
-package Backtester.backtester.caches;
+package Backtester.caches;
 
 import Backtester.objects.Bar;
 import Backtester.services.BusinessDayService;
@@ -39,4 +39,4 @@ public class InMemoryBarCache implements BarCache {
         }
         return result;
     }
-}
+} 

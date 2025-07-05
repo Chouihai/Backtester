@@ -1,6 +1,6 @@
 package Backtester.script.functions;
 
-import Backtester.backtester.caches.ValueAccumulatorCache;
+import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.valueaccumulator.CrossoverDetector;
 import Backtester.objects.valueaccumulator.ValueAccumulator;
 import Backtester.objects.valueaccumulator.key.CrossoverKey;

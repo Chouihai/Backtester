@@ -28,10 +28,10 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import Backtester.backtester.caches.BarCache;
-import Backtester.backtester.caches.OrderCache;
-import Backtester.backtester.caches.ValueAccumulatorCache;
-import Backtester.backtester.caches.InMemoryBarCache;
+import Backtester.caches.BarCache;
+import Backtester.caches.OrderCache;
+import Backtester.caches.ValueAccumulatorCache;
+import Backtester.caches.InMemoryBarCache;
 
 public class StrategyRunnerTest {
 

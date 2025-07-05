@@ -1,6 +1,6 @@
 package Backtester.strategies;
 
-import Backtester.backtester.caches.ValueAccumulatorCache;
+import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.Bar;
 import Backtester.objects.CompiledScript;
 import Backtester.script.EvaluationContext;

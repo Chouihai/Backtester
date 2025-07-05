@@ -1,6 +1,6 @@
 package Backtester.objects.valueaccumulator;
 
-import Backtester.backtester.caches.BarCache;
+import Backtester.caches.BarCache;
 import Backtester.objects.Bar;
 import Backtester.objects.valueaccumulator.key.ValueAccumulatorKey;
 import com.google.inject.Inject;
