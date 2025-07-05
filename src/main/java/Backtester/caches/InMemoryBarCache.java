@@ -39,4 +39,9 @@ public class InMemoryBarCache implements BarCache {
         }
         return result;
     }
+
+    @Override
+    public Map<LocalDate, Bar> getBars() {
+        return new HashMap<>(bars);
+    }
 } 

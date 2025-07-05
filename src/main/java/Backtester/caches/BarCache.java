@@ -11,4 +11,6 @@ public interface BarCache {
     void loadCache(Map<LocalDate, Bar> bars);
 
     List<Bar> getLastNDays(int days, Bar bar);
+    
+    Map<LocalDate, Bar> getBars();
 } 
