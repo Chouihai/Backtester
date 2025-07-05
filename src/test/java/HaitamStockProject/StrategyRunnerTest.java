@@ -229,8 +229,8 @@ public class StrategyRunnerTest {
         assertEquals(LocalDate.of(2025, 3, 7), orders.get(6).tradeDate());
         assertEquals(LocalDate.of(2025, 3, 18), orders.get(7).tradeDate());
 
-        assertEquals(0, positionManager.openTrades());
-        assertEquals(4, positionManager.closedTrades());
+        assertEquals(0, positionManager.openTradeCount());
+        assertEquals(4, positionManager.closedTradeCount());
         assertEquals(43_960.00, positionManager.grossProfit());
         assertEquals(35_100.00, positionManager.grossLoss());
         assertEquals(8_860.00, positionManager.netProfit());
@@ -276,8 +276,8 @@ public class StrategyRunnerTest {
         }
         assertEquals(8, orderCache.snapshot().size());
 
-        assertEquals(2, positionManager.openTrades());
-        assertEquals(4, positionManager.closedTrades());
+        assertEquals(2, positionManager.openTradeCount());
+        assertEquals(4, positionManager.closedTradeCount());
         assertEquals(45_060.00, positionManager.grossProfit());
         assertEquals(8_015.00, positionManager.grossLoss());
         assertEquals(37_045.00, positionManager.netProfit());
@@ -338,8 +338,8 @@ public class StrategyRunnerTest {
         assertEquals(LocalDate.of(2025, 3, 7), orders.get(10).tradeDate());
         assertEquals(LocalDate.of(2025, 3, 18), orders.get(11).tradeDate());
 
-        assertEquals(0, positionManager.openTrades());
-        assertEquals(8, positionManager.closedTrades());
+        assertEquals(0, positionManager.openTradeCount());
+        assertEquals(8, positionManager.closedTradeCount());
         assertEquals(43_960.00, positionManager.grossProfit());
         assertEquals(35_100.00, positionManager.grossLoss());
         assertEquals(8_860.00, positionManager.netProfit());
@@ -387,8 +387,8 @@ public class StrategyRunnerTest {
         List<Order> orders = new ArrayList<>(orderCache.snapshot().values());
         orders.sort(Comparator.comparing(Order::tradeDate));
 
-        assertEquals(5, positionManager.openTrades());
-        assertEquals(7, positionManager.closedTrades());
+        assertEquals(5, positionManager.openTradeCount());
+        assertEquals(7, positionManager.closedTradeCount());
         assertEquals(49_823.00, positionManager.grossProfit());
         assertEquals(8_015.00, positionManager.grossLoss());
         assertEquals(41_808.00, positionManager.netProfit());
