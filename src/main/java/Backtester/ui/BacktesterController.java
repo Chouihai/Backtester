@@ -151,21 +151,7 @@ public class BacktesterController {
             // Check if the dates exist in the data (some dates might be missing due to weekends/holidays)
             BarCache barCache = new BarCache();
             barCache.loadCache(bars);
-            int startIndex = barCache.findIndexByDate(startDate);
-            int endIndex = barCache.findIndexByDate(endDate);
             
-            if (startIndex == -1) {
-                throw new RuntimeException(String.format(
-                    "Start date %s not found in the available data. " +
-                    "This might be a weekend or holiday. Please select a different start date.", startDate));
-            }
-            
-            if (endIndex == -1) {
-                throw new RuntimeException(String.format(
-                    "End date %s not found in the available data. " +
-                    "This might be a weekend or holiday. Please select a different end date.", endDate));
-            }
-
             Platform.runLater(() -> statusLabel.setText("Running strategy..."));
 
             if (!strategyScript.trim().isEmpty()) {
