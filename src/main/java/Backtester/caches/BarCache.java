@@ -79,10 +79,6 @@ public class BarCache {
                 right = mid - 1;
             }
         }
-        if (left < bars.size()) {
-            return left;
-        }
-
         return -1;
     }
 

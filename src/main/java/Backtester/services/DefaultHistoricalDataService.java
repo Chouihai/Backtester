@@ -31,14 +31,14 @@ public class DefaultHistoricalDataService implements HistoricalDataService {
     }
 
     @Override
-    public List<Bar> getHistoricalData(String symbol, LocalDate startDate, LocalDate endDate) {
-        logger.info("Fetching historical data for {} from {} to {}", symbol, startDate, endDate);
-        return fetchDataFromAlphaVantage(symbol, startDate, endDate);
+    public List<Bar> getHistoricalData(String symbol) {
+        logger.info("Fetching full historical data for {}", symbol);
+        return fetchDataFromAlphaVantage(symbol);
     }
 
-    private List<Bar> fetchDataFromAlphaVantage(String symbol, LocalDate startDate, LocalDate endDate) {
+    private List<Bar> fetchDataFromAlphaVantage(String symbol) {
         try {
-            // Alpha Vantage TIME_SERIES_DAILY endpoint
+            // Alpha Vantage TIME_SERIES_DAILY endpoint - fetch full available history
             String urlStr = String.format(
                     "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s",
                     symbol.toUpperCase(),
@@ -86,14 +86,14 @@ public class DefaultHistoricalDataService implements HistoricalDataService {
             // TODO: persist bars into DB later to prevent reaching API limit
             barCache.loadCache(bars);
 
-            logger.info("Successfully fetched {} bars for {} from {} to {}",
-                    bars.size(), symbol, startDate, endDate);
+            logger.info("Successfully fetched {} bars for {} (full available history)",
+                    bars.size(), symbol);
 
             return new ArrayList<>(bars);
 
         } catch (Exception e) {
-            logger.error("Error fetching historical data for {} from {} to {}: {}",
-                    symbol, startDate, endDate, e.getMessage(), e);
+            logger.error("Error fetching historical data for {}: {}",
+                    symbol, e.getMessage(), e);
             throw new RuntimeException("Failed to fetch historical data: " + e.getMessage(), e);
         }
     }

@@ -124,11 +124,46 @@ public class BacktesterController {
             String strategyScript = strategyTextArea.getText();
 
             Platform.runLater(() -> statusLabel.setText("Fetching data for " + symbol + "..."));
-            LocalDate today = LocalDate.now();
-            List<Bar> bars = historicalDataService.getHistoricalData(symbol, today.minusYears(2), endDate);
+            List<Bar> bars = historicalDataService.getHistoricalData(symbol);
             
             if (bars.isEmpty()) {
-                throw new RuntimeException("No data available for " + symbol + " in the specified date range");
+                throw new RuntimeException("No data available for " + symbol + ". Please check the symbol and try again.");
+            }
+
+            // Validate that the requested dates are within the available data range
+            LocalDate availableStartDate = bars.getFirst().date;
+            LocalDate availableEndDate = bars.getLast().date;
+            
+            if (startDate.isBefore(availableStartDate)) {
+                throw new RuntimeException(String.format(
+                    "Start date %s is before the earliest available data (%s). " +
+                    "Please select a start date on or after %s.", 
+                    startDate, availableStartDate, availableStartDate));
+            }
+            
+            if (endDate.isAfter(availableEndDate)) {
+                throw new RuntimeException(String.format(
+                    "End date %s is after the latest available data (%s). " +
+                    "Please select an end date on or before %s.", 
+                    endDate, availableEndDate, availableEndDate));
+            }
+            
+            // Check if the dates exist in the data (some dates might be missing due to weekends/holidays)
+            BarCache barCache = new BarCache();
+            barCache.loadCache(bars);
+            int startIndex = barCache.findIndexByDate(startDate);
+            int endIndex = barCache.findIndexByDate(endDate);
+            
+            if (startIndex == -1) {
+                throw new RuntimeException(String.format(
+                    "Start date %s not found in the available data. " +
+                    "This might be a weekend or holiday. Please select a different start date.", startDate));
+            }
+            
+            if (endIndex == -1) {
+                throw new RuntimeException(String.format(
+                    "End date %s not found in the available data. " +
+                    "This might be a weekend or holiday. Please select a different end date.", endDate));
             }
 
             Platform.runLater(() -> statusLabel.setText("Running strategy..."));
