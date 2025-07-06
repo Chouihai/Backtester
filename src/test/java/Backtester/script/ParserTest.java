@@ -1,9 +1,15 @@
 package Backtester.script;
-import Backtester.script.statements.*;
+
+import Backtester.script.statements.ExpressionStatement;
+import Backtester.script.statements.IfStatement;
+import Backtester.script.statements.Statement;
+import Backtester.script.statements.VariableDeclaration;
 import Backtester.script.statements.expressions.*;
 import Backtester.script.tokens.Parser;
 import org.junit.jupiter.api.Test;
+
 import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ParserTest {
@@ -124,6 +130,40 @@ public class ParserTest {
         assertInstanceOf(VariableDeclaration.class, ifStmt.body.get(0));
         assertInstanceOf(VariableDeclaration.class, ifStmt.body.get(1));
     }
+
+    @Test
+    public void withEOFImmediatelyAfterIf() {
+        List<Statement> stmts = parse("""
+                sma20 = sma(20)
+                sma50 = sma(50)
+                
+                if (crossover(sma20, sma50))
+                    createOrder("long", true, 1000)
+                if (crossover(sma50, sma20))
+                    createOrder("position1", false, 1000)""");
+
+        assertEquals(4, stmts.size());
+        VariableDeclaration variableDeclaration1 = (VariableDeclaration) stmts.get(0);
+        assertTrue(variableDeclaration1.initializer.isFunctionCall());
+        assertEquals("sma20", variableDeclaration1.name);
+
+        VariableDeclaration variableDeclaration2 = (VariableDeclaration) stmts.get(1);
+        assertTrue(variableDeclaration2.initializer.isFunctionCall());
+        assertEquals("sma50", variableDeclaration2.name);
+
+        IfStatement ifStatement1 = (IfStatement) stmts.get(2);
+
+        assertTrue(ifStatement1.condition.isFunctionCall());
+        assertEquals(1, ifStatement1.body.size());
+        ExpressionStatement exprStmt = (ExpressionStatement) ifStatement1.body.get(0);
+        assertTrue(exprStmt.expression.isFunctionCall());
+
+        IfStatement ifStatement2 = (IfStatement) stmts.get(3);
+        assertTrue(ifStatement2.condition.isFunctionCall());
+        ExpressionStatement exprStmt3 = (ExpressionStatement) ifStatement1.body.get(0);
+        assertTrue(exprStmt3.expression.isFunctionCall());
+    }
+
 
     @Test
     public void testSmaAndOrderParsing() {

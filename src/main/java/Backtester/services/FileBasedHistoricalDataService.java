@@ -45,9 +45,6 @@ public class FileBasedHistoricalDataService implements HistoricalDataService {
                 throw new RuntimeException("No data available for " + symbol);
             }
 
-            System.out.println("Timeseries JSON from file:");
-            System.out.println(timeSeries);
-
             // Parse and create Bar objects
             List<Bar> bars = new ArrayList<>();
             List<String> dates = new ArrayList<>(timeSeries.keySet());

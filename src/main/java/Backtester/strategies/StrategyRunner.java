@@ -5,13 +5,14 @@ import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.Bar;
 import Backtester.objects.CompiledScript;
 import Backtester.script.EvaluationContext;
+import Backtester.script.ScriptEvaluator;
 import Backtester.script.functions.ScriptFunctionRegistry;
 import Backtester.script.functions.ScriptFunctionRegistryFactory;
-import Backtester.script.ScriptEvaluator;
 import Backtester.script.tokens.Parser;
 import com.google.inject.Inject;
 
 import java.time.LocalDate;
+import java.util.logging.Logger;
 
 public class StrategyRunner {
 
@@ -20,27 +21,32 @@ public class StrategyRunner {
     private final ValueAccumulatorCache valueAccumulatorCache;
     private final PositionManager positionManager;
     private final BarCache barCache;
+    private final Logger logger;
 
     @Inject()
     public StrategyRunner(ScriptFunctionRegistryFactory scriptFunctionRegistryFactory,
                           ValueAccumulatorCache valueAccumulatorCache,
                           PositionManager positionManager,
+                          Logger logger,
                           BarCache barCache) {
         this.scriptFunctionRegistryFactory = scriptFunctionRegistryFactory;
         this.valueAccumulatorCache = valueAccumulatorCache;
         this.positionManager = positionManager;
         this.barCache = barCache;
+        this.logger = logger;
     }
 
     public void run(String strategy, LocalDate startDate, LocalDate endDate) {
         int initialIndex = barCache.findIndexByDate(startDate);
         int endIndex = barCache.findIndexByDate(endDate);
+        logger.info("About to start running strategy starting at index " + initialIndex + " and ending at index " + endIndex);
         initialize(strategy, initialIndex);
         int i = initialIndex + 1;
         while (i < endIndex) {
             roll(barCache.get(i));
             i++;
         }
+        logger.info("Finished running strategy"); // TODO do a timed log later
     }
 
     /**

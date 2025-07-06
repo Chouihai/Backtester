@@ -2,9 +2,8 @@ package Backtester.ui;
 
 import Backtester.caches.BarCache;
 import Backtester.objects.Bar;
-import Backtester.objects.Security;
 import Backtester.objects.Trade;
-import Backtester.script.ScriptEvaluator;
+import Backtester.script.tokens.Parser;
 import Backtester.services.HistoricalDataService;
 import Backtester.strategies.PositionManager;
 import Backtester.strategies.StrategyRunner;
@@ -14,12 +13,10 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -186,6 +183,21 @@ public class BacktesterController {
             return false;
         }
 
+        if (strategyTextArea.getText().trim().isEmpty()) {
+            showAlert("Invalid Input", "Cannot have an empty strategy");
+            return false;
+        }
+
+        try {
+            Parser parser = new Parser();
+            String s = strategyTextArea.getText().trim();
+            parser.parse(strategyTextArea.getText().trim());
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            showAlert("Invalid Input", "Could not parse strategy. Error: " + e);
+            return false;
+        }
+
         if (startDatePicker.getValue() == null || endDatePicker.getValue() == null) {
             showAlert("Invalid Input", "Please select both start and end dates.");
             return false;
@@ -195,8 +207,6 @@ public class BacktesterController {
             showAlert("Invalid Input", "Start date must be before end date.");
             return false;
         }
-
-        // TODO: will need to validate strategy. Probably parse and collect any errors from that.
 
         try {
             double capital = Double.parseDouble(initialCapitalField.getText());

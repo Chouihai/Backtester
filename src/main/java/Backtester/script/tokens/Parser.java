@@ -1,18 +1,19 @@
 package Backtester.script.tokens;
 
 import Backtester.objects.CompiledScript;
-import Backtester.script.statements.*;
+import Backtester.script.statements.ExpressionStatement;
+import Backtester.script.statements.IfStatement;
+import Backtester.script.statements.Statement;
+import Backtester.script.statements.VariableDeclaration;
 import Backtester.script.statements.expressions.*;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Parser {
 
     private List<Token> tokens;
     private Map<String, Set<FunctionCall>> functionCalls;
     private int current = 0;
-    private final AtomicInteger seriesIds = new AtomicInteger(1);
 
     public CompiledScript parse(String s) {
         Tokenizer tokenizer = new Tokenizer(s);
@@ -61,12 +62,11 @@ public class Parser {
 
         List<Statement> body = new ArrayList<>();
 
-        // I need it to not parse
         while (!(isAtEnd() || check(TokenType.DEDENT))) {
             body.add(parseStatement());
-            consume(TokenType.NEWLINE, "Expected newline between if body statements.");
+            if (!isAtEnd()) consume(TokenType.NEWLINE, "Expected newline between if body statements.");
         }
-        consume(TokenType.DEDENT, "Expected dedent after if statement.");
+        if (!isAtEnd()) consume(TokenType.DEDENT, "Expected dedent after if statement.");
         return new IfStatement(condition, body);
     }
 
@@ -164,15 +164,7 @@ public class Parser {
                     functionCalls.put(fn.functionName, newCalls);
                 }
                 return fn;
-            } else {
-//                if (variables.containsKey(identifier.lexeme)) {
-//                    return variables.get(identifier.lexeme).initializer;
-//                }
-//                if (isSeries(identifier.lexeme)) {
-//                    return parseSeriesLiteral(identifier.lexeme, new ArrayList<>());
-//                }
-                return new Identifier(identifier.lexeme);
-            }
+            } else return new Identifier(identifier.lexeme);
         }
 
         if (match(TokenType.LPAREN)) {
@@ -183,25 +175,6 @@ public class Parser {
 
         throw error(peek(), "Expected expression.");
     }
-
-    // === Utility Methods ===
-//    private boolean isSeries(String name) {
-//        return Objects.equals(name, "sma"); // TODO: add more later
-//    }
-//
-//
-//    private SeriesLiteral parseSeriesLiteral(String seriesName, List<Expression> args) {
-//        if (args == null || args.size() > 1) throw new RuntimeException("Invalid arguments for a value accumulator");
-//        else return new SeriesLiteral(seriesTypeFromString(seriesName), args, seriesIds.getAndIncrement());
-//    }
-//
-//    private SeriesType seriesTypeFromString(String seriesType) {
-//        return switch (seriesType) {
-//            case "sma" -> SMA;
-//            case "ema" -> EMA;
-//            default -> throw new RuntimeException("Invalid value accumulator type: " + seriesType);
-//        };
-//    }
 
     private boolean match(TokenType... types) {
         for (TokenType type : types) {

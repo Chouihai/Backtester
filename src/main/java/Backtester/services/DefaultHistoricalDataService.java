@@ -1,7 +1,7 @@
 package Backtester.services;
 
-import Backtester.objects.Bar;
 import Backtester.caches.BarCache;
+import Backtester.objects.Bar;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.json.JSONObject;
@@ -69,9 +69,6 @@ public class DefaultHistoricalDataService implements HistoricalDataService {
             if (timeSeries.length() == 0) {
                 throw new RuntimeException("No data available for " + symbol);
             }
-
-            System.out.println("Timeseries JSON:");
-            System.out.println(timeSeries);
 
             // Parse and create Bar objects
             List<Bar> bars = new ArrayList<>();
