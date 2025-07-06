@@ -15,11 +15,12 @@ public class ValueAccumulatorFactory {
         this.barCache = barCache;
     }
 
-    public ValueAccumulator<?> create(ValueAccumulatorType type, int length, Bar startingBar) {
+    public ValueAccumulator<?> create(ValueAccumulatorType type, int length, int currentIndex) {
         if (type == ValueAccumulatorType.SMA) {
-            List<Bar> initialValues = barCache.getLastNDays(length, startingBar.index);
+            List<Bar> initialValues = barCache.getLastNDays(length, currentIndex);
             return new SmaCalculator(length, initialValues);
         }
+        // Crossover detector isn't here because it's easy to create.
         return null;
     }
 }

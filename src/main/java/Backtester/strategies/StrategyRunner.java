@@ -33,9 +33,10 @@ public class StrategyRunner {
     }
 
     public void run(String strategy) {
+        int startingIndex = 0;
         List<Bar> bars = barCache.all();
-        initialize(strategy, bars.getFirst());
-        bars.removeFirst();
+        initialize(strategy, startingIndex);
+        bars.removeIf(r -> r.index < startingIndex);
         for (Bar bar: bars) {
             roll(bar);
         }
@@ -44,11 +45,11 @@ public class StrategyRunner {
     /**
      * Get all functions and value accumulators needed
      */
-    public void initialize(String strategy, Bar initialBar) {
+    public void initialize(String strategy, int startingIndex) {
         CompiledScript compiled = new Parser().parse(strategy);
         ScriptFunctionRegistry registry = scriptFunctionRegistryFactory.createRegistry(compiled.functionCalls());
         this.evaluator = new ScriptEvaluator(compiled, registry, valueAccumulatorCache);
-        this.evaluator.evaluate(new EvaluationContext(initialBar));
+        this.evaluator.evaluate(new EvaluationContext(startingIndex));
     }
 
     /**
@@ -58,7 +59,7 @@ public class StrategyRunner {
     public void roll(Bar bar) {
         this.valueAccumulatorCache.roll(bar);
         this.positionManager.roll(bar);
-        evaluator.evaluate(new EvaluationContext(bar));
+        evaluator.evaluate(new EvaluationContext(bar.index));
     }
 }
 

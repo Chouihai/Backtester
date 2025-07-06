@@ -11,7 +11,6 @@ import Backtester.script.statements.*;
 import Backtester.script.statements.expressions.*;
 import Backtester.script.tokens.Parser;
 import Backtester.script.tokens.TokenType;
-//import Backtester.series.SeriesBuilder;
 
 import java.util.*;
 
@@ -21,19 +20,16 @@ public class ScriptEvaluator {
     private final CompiledScript compiledScript;
     private final Map<String, Literal> variables = new HashMap<>();
     private EvaluationContext currentContext;
-    private final ValueAccumulatorCache valueAccumulatorCache; // TODO: add this
 
     public ScriptEvaluator(String script, ScriptFunctionRegistry registry, ValueAccumulatorCache valueAccumulatorCache) {
         Parser parser = new Parser();
         this.compiledScript = parser.parse(script);
         this.registry = registry;
-        this.valueAccumulatorCache = valueAccumulatorCache;
     }
 
     public ScriptEvaluator(CompiledScript script, ScriptFunctionRegistry registry, ValueAccumulatorCache valueAccumulatorCache) {
         this.compiledScript = script;
         this.registry = registry;
-        this.valueAccumulatorCache = valueAccumulatorCache;
     }
 
     public void evaluate(EvaluationContext context) {

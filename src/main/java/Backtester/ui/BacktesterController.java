@@ -124,7 +124,10 @@ public class BacktesterController {
             String strategyScript = strategyTextArea.getText();
 
             Platform.runLater(() -> statusLabel.setText("Fetching data for " + symbol + "..."));
-            List<Bar> bars = historicalDataService.getHistoricalData(symbol, startDate, endDate);
+            // TODO: getting bars for startDate is not enough. Need to preload the cache with bars needed for ValueAccumulators.
+            // TODO: Will need to find out what is the furthest back index # of days we need to go back to get our bars.
+            LocalDate today = LocalDate.now();
+            List<Bar> bars = historicalDataService.getHistoricalData(symbol, today.minusYears(2), endDate);
             
             if (bars.isEmpty()) {
                 throw new RuntimeException("No data available for " + symbol + " in the specified date range");

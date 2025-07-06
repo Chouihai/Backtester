@@ -7,9 +7,6 @@ import com.google.inject.Singleton;
 import java.time.LocalDate;
 import java.util.*;
 
-// TODO: stop going by dates, and start going by indices
-// TODO: should not need a holiday calendar at all
-
 @Singleton
 public class BarCache {
 

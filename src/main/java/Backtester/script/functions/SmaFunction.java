@@ -32,7 +32,7 @@ public class SmaFunction implements ScriptFunction {
         if (cache.contains(key)) {
             calculator = (SmaCalculator) cache.getValueAccumulator(key);
         } else {
-            calculator = (SmaCalculator) factory.create(ValueAccumulatorType.SMA, days, context.currentBar());
+            calculator = (SmaCalculator) factory.create(ValueAccumulatorType.SMA, days, context.currentBarIndex());
             cache.put(key, calculator);
         }
         return new SmaFunctionResult(calculator);

@@ -91,6 +91,7 @@ public class StrategyRunnerTest {
             initialValues.add(new Bar(i, currentDate, 0, 0,0,100,0));
             currentDate = currentDate.plusDays(1);
         }
+        initialValues.add(new Bar(50, currentDate.plusDays(1), 0, 0,0,100,0));
 
         BarCache inMemoryBarCache = new BarCache();
         inMemoryBarCache.loadCache(initialValues);
@@ -98,7 +99,7 @@ public class StrategyRunnerTest {
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
         ValueAccumulatorCache vaCache = injector.getInstance(ValueAccumulatorCache.class);
 
-        runner.initialize(script, new Bar(50, currentDate.plusDays(1), 0, 0,0,100,0));
+        runner.initialize(script, 50);
         SmaCalculator va = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(20));
         assertEquals(100, va.getAverage());
         SmaCalculator va2 = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(50));
@@ -125,6 +126,7 @@ public class StrategyRunnerTest {
             initialValues.add(new Bar(i, currentDate, 0, 0,0,100,0));
             currentDate = currentDate.plusDays(1);
         }
+        initialValues.add(new Bar(50, currentDate.plusDays(1), 0, 0,0,90,0));
 
         BarCache inMemoryBarCache = new BarCache();
         inMemoryBarCache.loadCache(initialValues);
@@ -133,7 +135,7 @@ public class StrategyRunnerTest {
         ValueAccumulatorCache vaCache = injector.getInstance(ValueAccumulatorCache.class);
 
         // We initialize by setting sma20 lower than sma50
-        runner.initialize(script, new Bar(50, LocalDate.of(2024, 3, 14), 0, 0,0,90,0));
+        runner.initialize(script, 50);
         SmaCalculator sma20 = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(20));
         SmaCalculator sma50 = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(50));
         CrossoverDetector cd1 = (CrossoverDetector) vaCache.getValueAccumulator(new CrossoverKey(new SmaKey(20), new SmaKey(50)));
@@ -181,7 +183,7 @@ public class StrategyRunnerTest {
 
         inMemoryBarCache.loadCache(bars);
 
-        runner.initialize(script, bars.get(50));
+        runner.initialize(script, 50);
 
         int i = 51;
         while (i < bars.size()) {
@@ -225,7 +227,7 @@ public class StrategyRunnerTest {
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
         PositionManager positionManager = injector.getInstance(PositionManager.class);
-        runner.initialize(script, bars.get(50));
+        runner.initialize(script, 50);
 
         int i = 51;
         while (i < bars.size()) {
@@ -261,7 +263,7 @@ public class StrategyRunnerTest {
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
         PositionManager positionManager = injector.getInstance(PositionManager.class);
-        runner.initialize(script, bars.get(50));
+        runner.initialize(script, 50);
 
         int i = 51;
         while (i < bars.size()) {
@@ -310,7 +312,7 @@ public class StrategyRunnerTest {
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
         PositionManager positionManager = injector.getInstance(PositionManager.class);
-        runner.initialize(script, bars.get(50));
+        runner.initialize(script, 50);
 
         int i = 51;
         while (i < bars.size()) {
