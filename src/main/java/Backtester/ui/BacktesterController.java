@@ -252,26 +252,7 @@ public class BacktesterController {
         return (finalValue - initialCapital) / initialCapital;
     }
 
-    // TODO: this should be done by PositionManager not this
-    private double calculateMaxDrawdown(List<Trade> trades, List<Bar> bars) {
-        // Simplified max drawdown calculation
-        if (trades.isEmpty() || bars.isEmpty()) return 0.0;
-        
-        double peak = bars.get(0).close;
-        double maxDrawdown = 0.0;
-        
-        for (Bar bar : bars) {
-            if (bar.close > peak) {
-                peak = bar.close;
-            }
-            double drawdown = (peak - bar.close) / peak;
-            if (drawdown > maxDrawdown) {
-                maxDrawdown = drawdown;
-            }
-        }
-        
-        return maxDrawdown;
-    }
+
 
     // TODO: this should be done by PositionManager not this
     private double calculateSharpeRatio(List<Trade> trades, List<Bar> bars) {

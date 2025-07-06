@@ -264,20 +264,40 @@ public class BacktesterUI {
         tradeTable.setPrefHeight(200);
         
         // Define columns
-        TableColumn<Trade, String> dateCol = new TableColumn<>("Date");
-        dateCol.setPrefWidth(100);
-        dateCol.setCellValueFactory(data -> 
+        TableColumn<Trade, String> entryDateCol = new TableColumn<>("Entry Date");
+        entryDateCol.setPrefWidth(100);
+        entryDateCol.setCellValueFactory(data -> 
             new javafx.beans.property.SimpleStringProperty(data.getValue().getEntryBarDate().toString()));
+        
+        TableColumn<Trade, Double> entryPriceCol = new TableColumn<>("Entry Price");
+        entryPriceCol.setPrefWidth(100);
+        entryPriceCol.setCellValueFactory(data -> 
+            new javafx.beans.property.SimpleDoubleProperty(data.getValue().entry.open).asObject());
+        
+        TableColumn<Trade, String> exitDateCol = new TableColumn<>("Exit Date");
+        exitDateCol.setPrefWidth(100);
+        exitDateCol.setCellValueFactory(data -> {
+            if (data.getValue().isOpen()) {
+                return new javafx.beans.property.SimpleStringProperty("");
+            } else {
+                return new javafx.beans.property.SimpleStringProperty(data.getValue().getExit().get().date.toString());
+            }
+        });
+        
+        TableColumn<Trade, Double> exitPriceCol = new TableColumn<>("Exit Price");
+        exitPriceCol.setPrefWidth(100);
+        exitPriceCol.setCellValueFactory(data -> {
+            if (data.getValue().isOpen()) {
+                return new javafx.beans.property.SimpleDoubleProperty(0.0).asObject();
+            } else {
+                return new javafx.beans.property.SimpleDoubleProperty(data.getValue().getExit().get().open).asObject();
+            }
+        });
         
         TableColumn<Trade, String> sideCol = new TableColumn<>("Side");
         sideCol.setPrefWidth(80);
         sideCol.setCellValueFactory(data -> 
             new javafx.beans.property.SimpleStringProperty(data.getValue().getDirection().toString()));
-        
-        TableColumn<Trade, Double> priceCol = new TableColumn<>("Price");
-        priceCol.setPrefWidth(100);
-        priceCol.setCellValueFactory(data -> 
-            new javafx.beans.property.SimpleDoubleProperty(data.getValue().entry.open).asObject());
         
         TableColumn<Trade, Integer> quantityCol = new TableColumn<>("Quantity");
         quantityCol.setPrefWidth(100);
@@ -289,7 +309,7 @@ public class BacktesterUI {
         statusCol.setCellValueFactory(data -> 
             new javafx.beans.property.SimpleStringProperty(data.getValue().isOpen() ? "Open" : "Closed"));
         
-        tradeTable.getColumns().addAll(dateCol, sideCol, priceCol, quantityCol, statusCol);
+        tradeTable.getColumns().addAll(entryDateCol, entryPriceCol, exitDateCol, exitPriceCol, sideCol, quantityCol, statusCol);
         
         // Add placeholder
         tradeTable.setPlaceholder(new Label("No trades to display. Run a backtest to see results."));
