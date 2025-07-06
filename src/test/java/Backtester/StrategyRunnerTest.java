@@ -6,8 +6,6 @@ import Backtester.objects.order.Order;
 import Backtester.objects.valueaccumulator.CrossoverDetector;
 import Backtester.objects.valueaccumulator.key.CrossoverKey;
 import Backtester.objects.valueaccumulator.key.SmaKey;
-import Backtester.services.BusinessDayService;
-import Backtester.services.MockBusinessDayService;
 import Backtester.objects.valueaccumulator.SmaCalculator;
 import Backtester.strategies.PositionManager;
 import Backtester.strategies.StrategyRunner;
@@ -34,43 +32,20 @@ import Backtester.caches.ValueAccumulatorCache;
 
 public class StrategyRunnerTest {
 
-
-    private static BusinessDayService businessDayService;
-    private static final Set<LocalDate> holidays = new HashSet<>();
-    private final LocalDate startDate = LocalDate.of(2024, 1, 1);
     private final OrderCache orderCache = new InMemoryOrderCache();
-    private final static Map<LocalDate, Bar> bars = new HashMap<>();
+    private final static List<Bar> bars = new ArrayList<>();
     private static BarCache barCache;
     private final ValueAccumulatorCache vaCache = new ValueAccumulatorCache();
     private Injector injector = Guice.createInjector(new MyModule());
 
     @BeforeAll
     static void setupOnce() throws IOException {
-        // ---- 2024 Holidays ----
-        holidays.add(LocalDate.of(2024, 1, 1));  // New Year's Day
-        holidays.add(LocalDate.of(2024, 1, 15)); // MLK Jr. Day
-        holidays.add(LocalDate.of(2024, 2, 19)); // Presidents' Day
-        holidays.add(LocalDate.of(2024, 3, 29)); // Good Friday
-        holidays.add(LocalDate.of(2024, 5, 27)); // Memorial Day
-        holidays.add(LocalDate.of(2024, 6, 19)); // Juneteenth
-        holidays.add(LocalDate.of(2024, 7, 4));  // Independence Day
-        holidays.add(LocalDate.of(2024, 9, 2));  // Labor Day
-        holidays.add(LocalDate.of(2024, 11, 28)); // Thanksgiving
-        holidays.add(LocalDate.of(2024, 12, 25)); // Christmas
-
-        // ---- 2025 Holidays ----
-        holidays.add(LocalDate.of(2025, 1, 1));  // New Year's Day
-        holidays.add(LocalDate.of(2025, 1, 9));  // Jimmy Carter died, RIP da goat
-        holidays.add(LocalDate.of(2025, 1, 20)); // MLK Jr. Day
-        holidays.add(LocalDate.of(2025, 2, 17)); // Presidents' Day
-        holidays.add(LocalDate.of(2025, 4, 18)); // Good Friday
-        businessDayService = new MockBusinessDayService(holidays);
-
         ObjectMapper mapper = new ObjectMapper();
         InputStream is = StrategyRunnerTest.class.getResourceAsStream("/AAPL.JSON");
         JsonNode root = mapper.readTree(is);
         JsonNode results = root.get("results");
 
+        int i = 0;
         for (JsonNode node : results) {
             long timestampMillis = node.get("t").asLong();
             double open = node.get("o").asDouble();
@@ -81,6 +56,7 @@ public class StrategyRunnerTest {
                     .toLocalDate();
 
             Bar value = new Bar(
+                    i,
                     date,
                     open,
                     0.0, // high
@@ -89,9 +65,10 @@ public class StrategyRunnerTest {
                     0L
             );
 
-            bars.put(date, value);
+            i++;
+            bars.add(value);
         }
-        barCache = new BarCache(businessDayService);
+        barCache = new BarCache();
         barCache.loadCache(bars);
     }
 
@@ -108,21 +85,20 @@ public class StrategyRunnerTest {
                 """;
 
         LocalDate currentDate = LocalDate.of(2024, 1, 2);
-        Map<LocalDate, Bar> initialValues = new HashMap<>();
+        List<Bar> initialValues = new ArrayList<>();
         // 50 days of flat prices, no crossover at start
         for (int i = 0; i < 50; i++) {
-            initialValues.put(currentDate, new Bar(currentDate, 0, 0,0,100,0));
-            currentDate = businessDayService.nextBusinessDay(currentDate);
+            initialValues.add(new Bar(i, currentDate, 0, 0,0,100,0));
+            currentDate = currentDate.plusDays(1);
         }
 
-        BarCache inMemoryBarCache = new BarCache(businessDayService);
+        BarCache inMemoryBarCache = new BarCache();
         inMemoryBarCache.loadCache(initialValues);
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
         ValueAccumulatorCache vaCache = injector.getInstance(ValueAccumulatorCache.class);
 
-        runner.initialize(script, new Bar(LocalDate.of(2024, 3, 14), 0, 0,0,100,0));
-//        runner.roll(new Bar(LocalDate.of(2024, 3, 15), 0, 0,0,100,0));
+        runner.initialize(script, new Bar(50, currentDate.plusDays(1), 0, 0,0,100,0));
         SmaCalculator va = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(20));
         assertEquals(100, va.getAverage());
         SmaCalculator va2 = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(50));
@@ -143,20 +119,21 @@ public class StrategyRunnerTest {
                 """;
 
         LocalDate currentDate = LocalDate.of(2024, 1, 2);
-        Map<LocalDate, Bar> initialValues = new HashMap<>();
+        List<Bar> initialValues = new ArrayList<>();
         // 50 days of flat prices, no crossover at start
         for (int i = 0; i < 50; i++) {
-            initialValues.put(currentDate, new Bar(currentDate, 0, 0,0,100,0));
-            currentDate = businessDayService.nextBusinessDay(currentDate);
+            initialValues.add(new Bar(i, currentDate, 0, 0,0,100,0));
+            currentDate = currentDate.plusDays(1);
         }
-        BarCache inMemoryBarCache = new BarCache(businessDayService);
+
+        BarCache inMemoryBarCache = new BarCache();
         inMemoryBarCache.loadCache(initialValues);
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
         ValueAccumulatorCache vaCache = injector.getInstance(ValueAccumulatorCache.class);
 
         // We initialize by setting sma20 lower than sma50
-        runner.initialize(script, new Bar(LocalDate.of(2024, 3, 14), 0, 0,0,90,0));
+        runner.initialize(script, new Bar(50, LocalDate.of(2024, 3, 14), 0, 0,0,90,0));
         SmaCalculator sma20 = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(20));
         SmaCalculator sma50 = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(50));
         CrossoverDetector cd1 = (CrossoverDetector) vaCache.getValueAccumulator(new CrossoverKey(new SmaKey(20), new SmaKey(50)));
@@ -167,7 +144,7 @@ public class StrategyRunnerTest {
         assertFalse(cd2.getValue()); // Should be false, no crossover can happen on initialization
 
 
-        runner.roll(new Bar(LocalDate.of(2024, 3, 15), 0, 0,0,160,0));
+        runner.roll(new Bar(51, LocalDate.of(2024, 3, 15), 0, 0,0,160,0));
         assertEquals(102.5, sma20.getAverage());
         assertEquals(101, sma50.getAverage());
         assertTrue(cd1.getValue()); // 20 crosses over 50, should be true
@@ -176,7 +153,7 @@ public class StrategyRunnerTest {
 
         assertEquals(1, orderCache.snapshot().size());
 
-        runner.roll(new Bar(LocalDate.of(2024, 3, 15), 0, 0,0,150,0));
+        runner.roll(new Bar(52, LocalDate.of(2024, 3, 15), 0, 0,0,150,0));
         assertEquals(105, sma20.getAverage()); // 20 still above 50
         assertEquals(102, sma50.getAverage());
 
@@ -195,42 +172,34 @@ public class StrategyRunnerTest {
                     createOrder("position1", false, 1000)
                 """;
 
-        BarCache inMemoryBarCache = new BarCache(businessDayService);
+        BarCache inMemoryBarCache = new BarCache();
 
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
 
-        LocalDate currentDate = LocalDate.of(2024, 1, 2);
-        LocalDate endDate = LocalDate.of(2025, 5, 1);
-
-        Map<LocalDate, Bar> initialValues = new HashMap<>();
-        for (int i = 0; i < 50; i++) {
-            initialValues.put(currentDate, bars.get(currentDate));
-            currentDate = businessDayService.nextBusinessDay(currentDate);
-        }
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
         PositionManager positionManager = injector.getInstance(PositionManager.class);
 
-        inMemoryBarCache.loadCache(initialValues);
+        inMemoryBarCache.loadCache(bars);
 
-        runner.initialize(script, bars.get(currentDate));
-        currentDate = businessDayService.nextBusinessDay(currentDate);
+        runner.initialize(script, bars.get(50));
 
-        while (currentDate.isBefore(endDate) || currentDate.equals(endDate)) {
+        int i = 51;
+        while (i < bars.size()) {
             // First we check if we need to make any trades
-            runner.roll(bars.get(currentDate));
-            currentDate = businessDayService.nextBusinessDay(currentDate);
+            runner.roll(bars.get(i));
+            i++;
         }
         assertEquals(8, orderCache.snapshot().size());
         List<Order> orders = new ArrayList<>(orderCache.snapshot().values());
-        orders.sort(Comparator.comparing(Order::tradeDate));
-        assertEquals(LocalDate.of(2024, 5, 9), orders.get(0).tradeDate());
-        assertEquals(LocalDate.of(2024, 8, 21), orders.get(1).tradeDate());
-        assertEquals(LocalDate.of(2024, 8, 30), orders.get(2).tradeDate());
-        assertEquals(LocalDate.of(2024, 11, 20), orders.get(3).tradeDate());
-        assertEquals(LocalDate.of(2024, 12, 4), orders.get(4).tradeDate());
-        assertEquals(LocalDate.of(2025, 1, 28), orders.get(5).tradeDate());
-        assertEquals(LocalDate.of(2025, 3, 7), orders.get(6).tradeDate());
-        assertEquals(LocalDate.of(2025, 3, 18), orders.get(7).tradeDate());
+        orders.sort(Comparator.comparing(Order::fillDate));
+        assertEquals(LocalDate.of(2024, 5, 9), orders.get(0).fillDate());
+        assertEquals(LocalDate.of(2024, 8, 21), orders.get(1).fillDate());
+        assertEquals(LocalDate.of(2024, 8, 30), orders.get(2).fillDate());
+        assertEquals(LocalDate.of(2024, 11, 20), orders.get(3).fillDate());
+        assertEquals(LocalDate.of(2024, 12, 4), orders.get(4).fillDate());
+        assertEquals(LocalDate.of(2025, 1, 28), orders.get(5).fillDate());
+        assertEquals(LocalDate.of(2025, 3, 7), orders.get(6).fillDate());
+        assertEquals(LocalDate.of(2025, 3, 18), orders.get(7).fillDate());
 
         assertEquals(0, positionManager.openTrades());
         assertEquals(4, positionManager.closedTrades());
@@ -251,31 +220,18 @@ public class StrategyRunnerTest {
                     createOrder("position1", false, 500)
                 """;
 
-        BarCache inMemoryBarCache = new BarCache(businessDayService);
-
-
+        BarCache inMemoryBarCache = new BarCache();
+        inMemoryBarCache.loadCache(bars);
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
-
-        LocalDate currentDate = LocalDate.of(2024, 1, 2);
-        LocalDate endDate = LocalDate.of(2025, 5, 1);
-
-        Map<LocalDate, Bar> initialValues = new HashMap<>();
-        for (int i = 0; i < 50; i++) {
-            initialValues.put(currentDate, bars.get(currentDate));
-            currentDate = businessDayService.nextBusinessDay(currentDate);
-        }
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
         PositionManager positionManager = injector.getInstance(PositionManager.class);
+        runner.initialize(script, bars.get(50));
 
-        inMemoryBarCache.loadCache(initialValues);
-
-        runner.initialize(script, bars.get(currentDate));
-        currentDate = businessDayService.nextBusinessDay(currentDate);
-
-        while (currentDate.isBefore(endDate) || currentDate.equals(endDate)) {
+        int i = 51;
+        while (i < bars.size()) {
             // First we check if we need to make any trades
-            runner.roll(bars.get(currentDate));
-            currentDate = businessDayService.nextBusinessDay(currentDate);
+            runner.roll(bars.get(i));
+            i++;
         }
         assertEquals(8, orderCache.snapshot().size());
 
@@ -300,46 +256,34 @@ public class StrategyRunnerTest {
                     createOrder("position1", false, 1000)
                 """;
 
-        BarCache inMemoryBarCache = new BarCache(businessDayService);
-
+        BarCache inMemoryBarCache = new BarCache();
+        inMemoryBarCache.loadCache(bars);
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
-
-        LocalDate currentDate = LocalDate.of(2024, 1, 2);
-        LocalDate endDate = LocalDate.of(2025, 5, 1);
-
-        Map<LocalDate, Bar> initialValues = new HashMap<>();
-        for (int i = 0; i < 50; i++) {
-            initialValues.put(currentDate, bars.get(currentDate));
-            currentDate = businessDayService.nextBusinessDay(currentDate);
-        }
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
         PositionManager positionManager = injector.getInstance(PositionManager.class);
+        runner.initialize(script, bars.get(50));
 
-        inMemoryBarCache.loadCache(initialValues);
-
-        runner.initialize(script, bars.get(currentDate));
-        currentDate = businessDayService.nextBusinessDay(currentDate);
-
-        while (currentDate.isBefore(endDate) || currentDate.equals(endDate)) {
+        int i = 51;
+        while (i < bars.size()) {
             // First we check if we need to make any trades
-            runner.roll(bars.get(currentDate));
-            currentDate = businessDayService.nextBusinessDay(currentDate);
+            runner.roll(bars.get(i));
+            i++;
         }
         assertEquals(12, orderCache.snapshot().size());
         List<Order> orders = new ArrayList<>(orderCache.snapshot().values());
-        orders.sort(Comparator.comparing(Order::tradeDate));
-        assertEquals(LocalDate.of(2024, 5, 9), orders.get(0).tradeDate());
-        assertEquals(LocalDate.of(2024, 5, 9), orders.get(1).tradeDate());
-        assertEquals(LocalDate.of(2024, 8, 21), orders.get(2).tradeDate());
-        assertEquals(LocalDate.of(2024, 8, 30), orders.get(3).tradeDate());
-        assertEquals(LocalDate.of(2024, 8, 30), orders.get(4).tradeDate());
-        assertEquals(LocalDate.of(2024, 11, 20), orders.get(5).tradeDate());
-        assertEquals(LocalDate.of(2024, 12, 4), orders.get(6).tradeDate());
-        assertEquals(LocalDate.of(2024, 12, 4), orders.get(7).tradeDate());
-        assertEquals(LocalDate.of(2025, 1, 28), orders.get(8).tradeDate());
-        assertEquals(LocalDate.of(2025, 3, 7), orders.get(9).tradeDate());
-        assertEquals(LocalDate.of(2025, 3, 7), orders.get(10).tradeDate());
-        assertEquals(LocalDate.of(2025, 3, 18), orders.get(11).tradeDate());
+        orders.sort(Comparator.comparing(Order::fillDate));
+        assertEquals(LocalDate.of(2024, 5, 9), orders.get(0).fillDate());
+        assertEquals(LocalDate.of(2024, 5, 9), orders.get(1).fillDate());
+        assertEquals(LocalDate.of(2024, 8, 21), orders.get(2).fillDate());
+        assertEquals(LocalDate.of(2024, 8, 30), orders.get(3).fillDate());
+        assertEquals(LocalDate.of(2024, 8, 30), orders.get(4).fillDate());
+        assertEquals(LocalDate.of(2024, 11, 20), orders.get(5).fillDate());
+        assertEquals(LocalDate.of(2024, 12, 4), orders.get(6).fillDate());
+        assertEquals(LocalDate.of(2024, 12, 4), orders.get(7).fillDate());
+        assertEquals(LocalDate.of(2025, 1, 28), orders.get(8).fillDate());
+        assertEquals(LocalDate.of(2025, 3, 7), orders.get(9).fillDate());
+        assertEquals(LocalDate.of(2025, 3, 7), orders.get(10).fillDate());
+        assertEquals(LocalDate.of(2025, 3, 18), orders.get(11).fillDate());
 
         assertEquals(0, positionManager.openTrades());
         assertEquals(8, positionManager.closedTrades());
@@ -361,34 +305,22 @@ public class StrategyRunnerTest {
                     createOrder("position1", false, 500)
                 """;
 
-        BarCache inMemoryBarCache = new BarCache(businessDayService);
-
+        BarCache inMemoryBarCache = new BarCache();
+        inMemoryBarCache.loadCache(bars);
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
-
-        LocalDate currentDate = LocalDate.of(2024, 1, 2);
-        LocalDate endDate = LocalDate.of(2025, 5, 1);
-
-        Map<LocalDate, Bar> initialValues = new HashMap<>();
-        for (int i = 0; i < 50; i++) {
-            initialValues.put(currentDate, bars.get(currentDate));
-            currentDate = businessDayService.nextBusinessDay(currentDate);
-        }
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
         PositionManager positionManager = injector.getInstance(PositionManager.class);
+        runner.initialize(script, bars.get(50));
 
-        inMemoryBarCache.loadCache(initialValues);
-
-        runner.initialize(script, bars.get(currentDate));
-        currentDate = businessDayService.nextBusinessDay(currentDate);
-
-        while (currentDate.isBefore(endDate) || currentDate.equals(endDate)) {
+        int i = 51;
+        while (i < bars.size()) {
             // First we check if we need to make any trades
-            runner.roll(bars.get(currentDate));
-            currentDate = businessDayService.nextBusinessDay(currentDate);
+            runner.roll(bars.get(i));
+            i++;
         }
         assertEquals(12, orderCache.snapshot().size());
         List<Order> orders = new ArrayList<>(orderCache.snapshot().values());
-        orders.sort(Comparator.comparing(Order::tradeDate));
+        orders.sort(Comparator.comparing(Order::fillDate));
 
         assertEquals(5, positionManager.openTrades());
         assertEquals(7, positionManager.closedTrades());
@@ -411,7 +343,6 @@ public class StrategyRunnerTest {
 
         @Override
         protected void configure() {
-            bind(BusinessDayService.class).toInstance(businessDayService);
             bind(OrderCache.class).toInstance(orderCache);
             bind(ValueAccumulatorCache.class).toInstance(vaCache);
             bind(BarCache.class).toInstance(inMemoryBarCache);

@@ -12,15 +12,19 @@ public record Order(int id,
                     double stopPrice,
                     double fillPrice,
                     int quantity,
-                    LocalDate tradeDate,
+                    LocalDate fillDate,
                     String label) {
 
     public Order withFillPrice(double price) {
-        return new Order(id, symbol, status, side, orderType, limitPrice, stopPrice, price, quantity, tradeDate, label);
+        return new Order(id, symbol, status, side, orderType, limitPrice, stopPrice, price, quantity, fillDate, label);
     }
 
     public Order withOrderStatus(OrderStatus status) {
-        return new Order(id, symbol, status, side, orderType, limitPrice, stopPrice, fillPrice, quantity, tradeDate, label);
+        return new Order(id, symbol, status, side, orderType, limitPrice, stopPrice, fillPrice, quantity, fillDate, label);
+    }
+
+    public Order withFillDate(LocalDate fillDate) {
+        return new Order(id, symbol, status, side, orderType, limitPrice, stopPrice, fillPrice, quantity, fillDate, label);
     }
 }
 

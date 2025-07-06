@@ -90,20 +90,20 @@ public class PolygonHistoricalDataService implements HistoricalDataService {
             }
 
             // Parse and create Bar objects
-            Map<LocalDate, Bar> barsMap = new TreeMap<>();
+            List<Bar> bars = new ArrayList<>();
             for (int i = 0; i < results.length(); i++) {
                 JSONObject candle = results.getJSONObject(i);
-                Bar bar = parseBarFromJson(candle);
-                barsMap.put(bar.date, bar);
+                Bar bar = parseBarFromJson(i, candle);
+                bars.add(bar);
             }
 
             // Load data into cache
-            barCache.loadCache(barsMap);
+            barCache.loadCache(bars);
             
             logger.info("Successfully fetched {} bars for {} from {} to {}", 
-                barsMap.size(), symbol, startDate, endDate);
+                bars.size(), symbol, startDate, endDate);
 
-            return new ArrayList<>(barsMap.values());
+            return new ArrayList<>(bars);
 
         } catch (Exception e) {
             logger.error("Error fetching historical data for {} from {} to {}: {}", 
@@ -112,7 +112,7 @@ public class PolygonHistoricalDataService implements HistoricalDataService {
         }
     }
 
-    private Bar parseBarFromJson(JSONObject candle) {
+    private Bar parseBarFromJson(int index, JSONObject candle) {
         long timestamp = candle.getLong("t");
         LocalDate date = Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate();
         
@@ -122,7 +122,7 @@ public class PolygonHistoricalDataService implements HistoricalDataService {
         double close = candle.getDouble("c");
         long volume = candle.getLong("v");
 
-        return new Bar(date, open, high, low, close, volume);
+        return new Bar(index, date, open, high, low, close, volume);
     }
 
     private JSONObject makeApiCall(String urlStr) {

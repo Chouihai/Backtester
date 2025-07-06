@@ -32,7 +32,7 @@ public class PositionManager {
         List<Order> openMarketOrders = orderCache.snapshot().values().stream().filter(order -> order.status() == OrderStatus.OPEN && order.orderType() == OrderType.Market).toList();
         if (!openMarketOrders.isEmpty()) {
             for (Order openOrder: openMarketOrders) {
-                Order filledOrder = openOrder.withFillPrice(bar.open).withOrderStatus(OrderStatus.FILLED);
+                Order filledOrder = openOrder.withFillPrice(bar.open).withOrderStatus(OrderStatus.FILLED).withFillDate(bar.date);
                 orderCache.addOrder(filledOrder);
                 applyToPosition(filledOrder, bar);
             }
@@ -93,6 +93,10 @@ public class PositionManager {
 
     public int openTrades() {
         return position.getTrades().stream().filter(Trade::isOpen).toList().size();
+    }
+
+    public List<Trade> allTrades() {
+        return position.getTrades();
     }
 
     public int closedTrades() {

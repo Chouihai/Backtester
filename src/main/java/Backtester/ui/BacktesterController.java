@@ -6,6 +6,7 @@ import Backtester.objects.Security;
 import Backtester.objects.Trade;
 import Backtester.script.ScriptEvaluator;
 import Backtester.services.HistoricalDataService;
+import Backtester.strategies.PositionManager;
 import Backtester.strategies.StrategyRunner;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -32,7 +33,7 @@ public class BacktesterController {
     // Services
     private final HistoricalDataService historicalDataService;
     private final StrategyRunner strategyRunner;
-    private final BarCache barCache;
+    private final PositionManager positionManager;
 
     // UI Components
     public TextField symbolField;
@@ -55,10 +56,10 @@ public class BacktesterController {
 
     public BacktesterController(HistoricalDataService historicalDataService, 
                                StrategyRunner strategyRunner,
-                                BarCache barCache) {
+                                PositionManager positionManager) {
         this.historicalDataService = historicalDataService;
         this.strategyRunner = strategyRunner;
-        this.barCache = barCache;
+        this.positionManager = positionManager;
     }
 
     @FXML
@@ -119,7 +120,7 @@ public class BacktesterController {
             String symbol = symbolField.getText().trim().toUpperCase();
             LocalDate startDate = startDatePicker.getValue();
             LocalDate endDate = endDatePicker.getValue();
-            double initialCapital = Double.parseDouble(initialCapitalField.getText());
+            double initialCapital = Double.parseDouble(initialCapitalField.getText()); // Nothing will be done with initial capital for now
             String strategyScript = strategyTextArea.getText();
 
             Platform.runLater(() -> statusLabel.setText("Fetching data for " + symbol + "..."));
@@ -133,18 +134,15 @@ public class BacktesterController {
 
             if (!strategyScript.trim().isEmpty()) {
                 try {
-                    strategyRunner.run(strategyScript, barCache.getBars(startDate, endDate));
+                    strategyRunner.run(strategyScript);
                 } catch (Exception e) {
                     throw new RuntimeException("Strategy parsing failed: " + e.getMessage());
                 }
             }
 
-            // Run strategy (simplified for now - will need to implement proper strategy running)
-            List<Trade> trades = new ArrayList<>(); // Placeholder - need to implement actual strategy running
-            
             // Update UI with results
             Platform.runLater(() -> {
-                updateResults(trades, bars, initialCapital);
+                updateResults();
                 statusLabel.setText("Backtest completed successfully");
                 resetUI();
             });
@@ -190,24 +188,24 @@ public class BacktesterController {
         return true;
     }
 
-    private void updateResults(List<Trade> trades, List<Bar> bars, double initialCapital) {
+    private void updateResults() {
         tradesData.clear();
-        tradesData.addAll(trades);
+        tradesData.addAll(positionManager.allTrades());
 
-        double totalReturn = calculateTotalReturn(trades, initialCapital);
-        double maxDrawdown = calculateMaxDrawdown(trades, bars);
-        double sharpeRatio = calculateSharpeRatio(trades, bars);
+        double totalReturn = positionManager.netProfit();
+        double maxDrawdown = 0.0;
+        double sharpeRatio = 0.0;
 
         totalReturnLabel.setText(String.format("%.2f%%", totalReturn * 100));
         maxDrawdownLabel.setText(String.format("%.2f%%", maxDrawdown * 100));
         sharpeRatioLabel.setText(String.format("%.2f", sharpeRatio));
 
-        updateChart(bars, trades);
+        updateChart();
     }
 
     private double calculateTotalReturn(List<Trade> trades, double initialCapital) {
         if (trades.isEmpty()) return 0.0;
-        
+
         double finalValue = initialCapital;
         for (Trade trade : trades) {
             if (trade.getDirection() == Trade.TradeDirection.LONG) {
@@ -216,7 +214,7 @@ public class BacktesterController {
                 finalValue += trade.getQuantity() * trade.entry.open;
             }
         }
-        
+
         return (finalValue - initialCapital) / initialCapital;
     }
 
@@ -270,7 +268,7 @@ public class BacktesterController {
         return stdDev == 0 ? 0 : (mean * 252) / (stdDev * Math.sqrt(252));
     }
 
-    private void updateChart(List<Bar> bars, List<Trade> trades) {
+    private void updateChart() {
         // Placeholder for chart update
         // TODO: Implement chart visualization
         chartContainer.getChildren().clear();

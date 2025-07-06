@@ -4,9 +4,7 @@ import Backtester.caches.OrderCache;
 import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.Bar;
 import Backtester.objects.valueaccumulator.*;
-import Backtester.objects.valueaccumulator.key.ValueAccumulatorKeyBuilder;
 import Backtester.script.statements.expressions.FunctionCall;
-import Backtester.services.BusinessDayService;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -20,27 +18,23 @@ public class ScriptFunctionRegistryFactory {
 
     private final ValueAccumulatorCache valueAccumulatorCache;
     private final ValueAccumulatorFactory valueAccumulatorFactory;
-    private final BusinessDayService businessDayService;
     private final OrderCache orderCache;
-    private final ValueAccumulatorKeyBuilder valueAccumulatorKeyBuilder = new ValueAccumulatorKeyBuilder();
     private final Logger logger = null; // TODO inject this later
 
 
     @Inject()
     public ScriptFunctionRegistryFactory(OrderCache orderCache,
                                          ValueAccumulatorCache valueAccumulatorCache,
-                                         ValueAccumulatorFactory valueAccumulatorFactory,
-                                         BusinessDayService businessDayService) {
+                                         ValueAccumulatorFactory valueAccumulatorFactory) {
         this.orderCache = orderCache;
         this.valueAccumulatorCache = valueAccumulatorCache;
         this.valueAccumulatorFactory = valueAccumulatorFactory;
-        this.businessDayService = businessDayService;
     }
 
-    public ScriptFunctionRegistry createRegistry(Map<String, Set<FunctionCall>> functionCalls, Bar startingBar) {
+    public ScriptFunctionRegistry createRegistry(Map<String, Set<FunctionCall>> functionCalls) {
         ScriptFunctionRegistry registry = new ScriptFunctionRegistry();
         if (functionCalls.containsKey("createOrder")) {
-            CreateOrderFn fn = new CreateOrderFn(orderCache,businessDayService);
+            CreateOrderFn fn = new CreateOrderFn(orderCache);
             registry.register("createOrder", fn);
         }
         if (functionCalls.containsKey("sma")) {
@@ -48,18 +42,6 @@ public class ScriptFunctionRegistryFactory {
             registry.register("sma", fn);
         }
         if (functionCalls.containsKey("crossover")) {
-//            Set<FunctionCall> calls = functionCalls.get("crossover");
-//            for (FunctionCall call: calls) {
-//                ValueAccumulator<Double> arg1 = ((ValueAccumulator<Double>) call.arguments.get(0));
-//                ValueAccumulator<Double> arg2 = ((ValueAccumulator<Double>) call.arguments.get(1));
-//
-//                CrossoverDetector crossoverDetector = new CrossoverDetector(arg1.copy(), arg2.copy());
-//                ValueAccumulatorKey key1 = valueAccumulatorKeyBuilder.build(arg1);
-//                ValueAccumulatorKey key2 = valueAccumulatorKeyBuilder.build(arg2);
-//                CrossoverKey key = new CrossoverKey(key1, key2);
-//
-//                valueAccumulatorCache.put(key, crossoverDetector);
-//            }
             CrossoverFn fn = new CrossoverFn(valueAccumulatorCache);
             registry.register("crossover", fn);
         }

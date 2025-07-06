@@ -8,7 +8,6 @@ import Backtester.objects.order.OrderType;
 import Backtester.script.EvaluationContext;
 import Backtester.script.functions.result.ScriptFunctionResult;
 import Backtester.script.functions.result.VoidScriptFunctionResult;
-import Backtester.services.BusinessDayService;
 import org.slf4j.Logger;
 
 import java.time.LocalDate;
@@ -21,21 +20,18 @@ public class CreateOrderFn implements ScriptFunction {
     private final static int MINIMUM_ARGUMENTS_SIZE = 2; // Later on might want to have required vs optional args
     private final static int MAXIMUM_ARGUMENTS_SIZE = 3; // Later on might want to have required vs optional args
     private final OrderCache orderCache;
-    private final BusinessDayService businessDayService;
     private final String symbol = "AAPL"; // TODO Inject this later
     private final AtomicInteger idGenerator = new AtomicInteger(1); // Orders will exist entirely in memory
 
     // Use injection later
-    public CreateOrderFn(OrderCache orderCache, BusinessDayService businessDayService) {
+    public CreateOrderFn(OrderCache orderCache) {
         this.orderCache = orderCache;
-        this.businessDayService = businessDayService;
     }
 
     @Override
     public ScriptFunctionResult execute(List<Object> args, EvaluationContext context) {
         CreateOrderFnArguments arguments = validateArgs(args);
-        LocalDate date = businessDayService.nextBusinessDay(context.currentBar().date);
-        Order newOrder = new Order(idGenerator.getAndIncrement(), symbol, OrderStatus.OPEN, arguments.side(), OrderType.Market, 0.0, 0.0, 0.0, arguments.quantity(), date, arguments.name());
+        Order newOrder = new Order(idGenerator.getAndIncrement(), symbol, OrderStatus.OPEN, arguments.side(), OrderType.Market, 0.0, 0.0, 0.0, arguments.quantity(), null, arguments.name());
         orderCache.addOrder(newOrder);
         return new VoidScriptFunctionResult();
     }

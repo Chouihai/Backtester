@@ -1,5 +1,6 @@
 package Backtester.strategies;
 
+import Backtester.caches.BarCache;
 import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.Bar;
 import Backtester.objects.CompiledScript;
@@ -18,17 +19,21 @@ public class StrategyRunner {
     private final ScriptFunctionRegistryFactory scriptFunctionRegistryFactory;
     private final ValueAccumulatorCache valueAccumulatorCache;
     private final PositionManager positionManager;
+    private final BarCache barCache;
 
     @Inject()
     public StrategyRunner(ScriptFunctionRegistryFactory scriptFunctionRegistryFactory,
                           ValueAccumulatorCache valueAccumulatorCache,
-                          PositionManager positionManager) {
+                          PositionManager positionManager,
+                          BarCache barCache) {
         this.scriptFunctionRegistryFactory = scriptFunctionRegistryFactory;
         this.valueAccumulatorCache = valueAccumulatorCache;
         this.positionManager = positionManager;
+        this.barCache = barCache;
     }
 
-    public void run(String strategy, List<Bar> bars) {
+    public void run(String strategy) {
+        List<Bar> bars = barCache.all();
         initialize(strategy, bars.getFirst());
         bars.removeFirst();
         for (Bar bar: bars) {
@@ -41,7 +46,7 @@ public class StrategyRunner {
      */
     public void initialize(String strategy, Bar initialBar) {
         CompiledScript compiled = new Parser().parse(strategy);
-        ScriptFunctionRegistry registry = scriptFunctionRegistryFactory.createRegistry(compiled.functionCalls(), initialBar);
+        ScriptFunctionRegistry registry = scriptFunctionRegistryFactory.createRegistry(compiled.functionCalls());
         this.evaluator = new ScriptEvaluator(compiled, registry, valueAccumulatorCache);
         this.evaluator.evaluate(new EvaluationContext(initialBar));
     }

@@ -31,7 +31,7 @@ class PositionManagerTest {
         orderCache = new InMemoryOrderCache();
         positionManager = new PositionManager(orderCache);
         testDate = LocalDate.of(2024, 1, 1);
-        testBar = new Bar(testDate, 100.0, 105.0, 95.0, 102.0, 1000);
+        testBar = new Bar(1, testDate, 100.0, 105.0, 95.0, 102.0, 1000);
     }
 
     private int getTotalOpenQuantity() {
@@ -100,7 +100,7 @@ class PositionManagerTest {
         positionManager.roll(testBar);
         Order sellOrder = new Order(2, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.Market, 0, 0, 0, 100, testDate, "test");
         orderCache.addOrder(sellOrder);
-        Bar closeBar = new Bar(testDate.plusDays(1), 110.0, 115.0, 105.0, 112.0, 1000);
+        Bar closeBar = new Bar(2, testDate.plusDays(1), 110.0, 115.0, 105.0, 112.0, 1000);
         positionManager.roll(closeBar);
         assertEquals(0, positionManager.openTrades());
         assertEquals(1, positionManager.closedTrades());
@@ -117,7 +117,7 @@ class PositionManagerTest {
         positionManager.roll(testBar);
         Order sellOrder = new Order(2, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.Market, 0, 0, 0, 60, testDate, "test");
         orderCache.addOrder(sellOrder);
-        Bar closeBar = new Bar(testDate.plusDays(1), 110.0, 115.0, 105.0, 112.0, 1000);
+        Bar closeBar = new Bar(2, testDate.plusDays(1), 110.0, 115.0, 105.0, 112.0, 1000);
         positionManager.roll(closeBar);
         assertEquals(1, positionManager.openTrades());
         assertEquals(1, positionManager.closedTrades());
@@ -134,7 +134,7 @@ class PositionManagerTest {
         positionManager.roll(testBar);
         Order sellOrder = new Order(2, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.Market, 0, 0, 0, 150, testDate, "test");
         orderCache.addOrder(sellOrder);
-        Bar closeBar = new Bar(testDate.plusDays(1), 110.0, 115.0, 105.0, 112.0, 1000);
+        Bar closeBar = new Bar(2, testDate.plusDays(1), 110.0, 115.0, 105.0, 112.0, 1000);
         positionManager.roll(closeBar);
         assertEquals(1, positionManager.openTrades());
         assertEquals(1, positionManager.closedTrades());
@@ -147,7 +147,7 @@ class PositionManagerTest {
         Order buyOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Market, 0, 0, 0, 100, testDate, "test");
         orderCache.addOrder(buyOrder);
         positionManager.roll(testBar);
-        Bar currentBar = new Bar(testDate.plusDays(1), 110.0, 115.0, 105.0, 112.0, 1000);
+        Bar currentBar = new Bar(2, testDate.plusDays(1), 110.0, 115.0, 105.0, 112.0, 1000);
         positionManager.roll(currentBar);
         double expectedOpenPnL = (110.0 - 100.0) * 100;
         assertEquals(expectedOpenPnL, positionManager.openPnL());
@@ -160,15 +160,15 @@ class PositionManagerTest {
         positionManager.roll(testBar);
         Order sellOrder1 = new Order(2, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.Market, 0, 0, 0, 100, testDate.plusDays(1), "test");
         orderCache.addOrder(sellOrder1);
-        Bar profitBar = new Bar(testDate.plusDays(1), 110.0, 115.0, 105.0, 112.0, 1000);
+        Bar profitBar = new Bar(2, testDate.plusDays(1), 110.0, 115.0, 105.0, 112.0, 1000);
         positionManager.roll(profitBar);
         Order buyOrder2 = new Order(3, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Market, 0, 0, 0, 100, testDate.plusDays(2), "test");
         orderCache.addOrder(buyOrder2);
-        Bar lossBar = new Bar(testDate.plusDays(2), 110.0, 115.0, 105.0, 112.0, 1000);
+        Bar lossBar = new Bar(2, testDate.plusDays(2), 110.0, 115.0, 105.0, 112.0, 1000);
         positionManager.roll(lossBar);
         Order sellOrder2 = new Order(4, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.Market, 0, 0, 0, 100, testDate.plusDays(3), "test");
         orderCache.addOrder(sellOrder2);
-        Bar finalBar = new Bar(testDate.plusDays(3), 105.0, 110.0, 100.0, 107.0, 1000);
+        Bar finalBar = new Bar(2, testDate.plusDays(3), 105.0, 110.0, 100.0, 107.0, 1000);
         positionManager.roll(finalBar);
         double expectedNetProfit = (110.0 - 100.0) * 100 + (105.0 - 110.0) * 100;
         double expectedGrossProfit = (110.0 - 100.0) * 100;
@@ -219,9 +219,9 @@ class PositionManagerTest {
         Order order1 = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Market, 0, 0, 0, 100, date1, "test");
         Order order2 = new Order(2, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Market, 0, 0, 0, 100, date2, "test");
         orderCache.addOrder(order1);
-        positionManager.roll(new Bar(date1, 100.0, 105.0, 95.0, 102.0, 1000));
+        positionManager.roll(new Bar(2, date1, 100.0, 105.0, 95.0, 102.0, 1000));
         orderCache.addOrder(order2);
-        positionManager.roll(new Bar(date2, 101.0, 106.0, 96.0, 103.0, 1000));
+        positionManager.roll(new Bar(3, date2, 101.0, 106.0, 96.0, 103.0, 1000));
         // Just check that both trades are open and quantities are correct
         assertEquals(2, positionManager.openTrades());
         assertEquals(200, getTotalOpenQuantity());
@@ -234,7 +234,7 @@ class PositionManagerTest {
         positionManager.roll(testBar);
         Order sellOrder = new Order(2, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.Market, 0, 0, 0, 60, testDate, "test");
         orderCache.addOrder(sellOrder);
-        Bar closeBar = new Bar(testDate.plusDays(1), 110.0, 115.0, 105.0, 112.0, 1000);
+        Bar closeBar = new Bar(2, testDate.plusDays(1), 110.0, 115.0, 105.0, 112.0, 1000);
         positionManager.roll(closeBar);
         assertEquals(1, positionManager.openTrades());
         assertEquals(1, positionManager.closedTrades());

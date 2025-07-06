@@ -1,7 +1,5 @@
 package Backtester.ui;
 
-import Backtester.services.BusinessDayService;
-import Backtester.services.DefaultBusinessDayService;
 import Backtester.caches.OrderCache;
 import Backtester.caches.InMemoryOrderCache;
 import Backtester.caches.ValueAccumulatorCache;
@@ -23,9 +21,6 @@ public class AppModule extends AbstractModule {
         // Bind API key
         bind(String.class).annotatedWith(Names.named("api.key"))
             .toInstance(props.getProperty("api.key", ""));
-        
-        // Core services (in-memory only)
-        bind(BusinessDayService.class).to(DefaultBusinessDayService.class).in(Singleton.class);
         
         // In-memory caches
         bind(OrderCache.class).to(InMemoryOrderCache.class).in(Singleton.class);
