@@ -16,6 +16,7 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class DefaultHistoricalDataService implements HistoricalDataService {
@@ -69,16 +70,19 @@ public class DefaultHistoricalDataService implements HistoricalDataService {
                 throw new RuntimeException("No data available for " + symbol);
             }
 
+            System.out.println("Timeseries JSON:");
+            System.out.println(timeSeries);
+
             // Parse and create Bar objects
             List<Bar> bars = new ArrayList<>();
+            List<String> dates = new ArrayList<>(timeSeries.keySet());
+            dates.sort(Comparator.comparing(date -> LocalDate.parse(date, DateTimeFormatter.ISO_DATE)));
             int index = 0;
-
-            // Alpha Vantage returns data in descending order (newest first)
-            for (String dateStr: timeSeries.keySet()) {
+            for (String dateStr: dates) {
                 JSONObject dailyData = timeSeries.getJSONObject(dateStr);
                 LocalDate barDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_DATE);
                 Bar bar = parseBarFromJson(index, barDate, dailyData);
-                bars.addFirst(bar);
+                bars.add(bar);
                 index++;
             }
 

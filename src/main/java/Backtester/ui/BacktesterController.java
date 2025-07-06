@@ -133,6 +133,8 @@ public class BacktesterController {
             // Validate that the requested dates are within the available data range
             LocalDate availableStartDate = bars.getFirst().date;
             LocalDate availableEndDate = bars.getLast().date;
+
+            logger.info("Fetched " + bars.size() + " time series values for " + symbol + " from " + availableStartDate + " to " + availableEndDate + ".");
             
             if (startDate.isBefore(availableStartDate)) {
                 throw new RuntimeException(String.format(

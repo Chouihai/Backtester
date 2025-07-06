@@ -50,7 +50,9 @@ public class BacktesterUI {
         ScrollPane scrollPane = new ScrollPane(mainLayout);
         scrollPane.setFitToWidth(true);
         scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        
+
+        // Initialize the controller to set up event handlers
+        controller.initialize();
         return scrollPane;
     }
 
