@@ -46,7 +46,44 @@ public class BarCache {
         return result;
     }
 
-    public List<Bar> all() {
-        return new ArrayList<>(bars);
+    public Bar getBarByDate(LocalDate date) {
+        int index = findIndexByDate(date);
+        if (index >= 0 && index < bars.size()) {
+            return bars.get(index);
+        }
+        return null;
     }
+
+    /**
+     * Because bars are sorted chronologically, we can do a binary search TODO: unit test this
+     */
+    public int findIndexByDate(LocalDate targetDate) {
+        if (bars.isEmpty()) {
+            return -1;
+        }
+
+        int left = 0;
+        int right = bars.size() - 1;
+
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            LocalDate midDate = bars.get(mid).date;
+
+            int comparison = midDate.compareTo(targetDate);
+
+            if (comparison == 0) {
+                return mid;
+            } else if (comparison < 0) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        if (left < bars.size()) {
+            return left;
+        }
+
+        return -1;
+    }
+
 } 

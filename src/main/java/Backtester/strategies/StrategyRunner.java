@@ -11,7 +11,7 @@ import Backtester.script.ScriptEvaluator;
 import Backtester.script.tokens.Parser;
 import com.google.inject.Inject;
 
-import java.util.List;
+import java.time.LocalDate;
 
 public class StrategyRunner {
 
@@ -32,13 +32,14 @@ public class StrategyRunner {
         this.barCache = barCache;
     }
 
-    public void run(String strategy) {
-        int startingIndex = 0;
-        List<Bar> bars = barCache.all();
-        initialize(strategy, startingIndex);
-        bars.removeIf(r -> r.index < startingIndex);
-        for (Bar bar: bars) {
-            roll(bar);
+    public void run(String strategy, LocalDate startDate, LocalDate endDate) {
+        int initialIndex = barCache.findIndexByDate(startDate);
+        int endIndex = barCache.findIndexByDate(endDate);
+        initialize(strategy, initialIndex);
+        int i = initialIndex + 1;
+        while (i < endIndex) {
+            roll(barCache.get(i));
+            i++;
         }
     }
 

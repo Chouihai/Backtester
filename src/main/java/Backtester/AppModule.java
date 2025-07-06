@@ -1,15 +1,7 @@
 package Backtester;
 
-import Backtester.dbaccess.DefaultSecurityDBAccess;
-//import Backtester.dbaccess.DefaultSecurityDayValuesDBAccess;
-import Backtester.dbaccess.SecurityDBAccess;
-//import Backtester.dbaccess.SecurityDayValuesDBAccess;
-//import Backtester.services.DefaultSecurityDataService;
-//import Backtester.services.SecurityDataService;
-//import Backtester.services.BusinessDayService;
-//import Backtester.services.DefaultBusinessDayService;
+import Backtester.services.DefaultHistoricalDataService;
 import Backtester.services.HistoricalDataService;
-import Backtester.services.PolygonHistoricalDataService;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 
@@ -32,7 +24,6 @@ public class AppModule extends AbstractModule {
         }
 
         Names.bindProperties(binder(), properties);
-        bind(SecurityDBAccess.class).to(DefaultSecurityDBAccess.class);
-        bind(HistoricalDataService.class).to(PolygonHistoricalDataService.class);
+        bind(HistoricalDataService.class).to(DefaultHistoricalDataService.class);
     }
 }

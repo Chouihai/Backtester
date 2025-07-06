@@ -124,8 +124,6 @@ public class BacktesterController {
             String strategyScript = strategyTextArea.getText();
 
             Platform.runLater(() -> statusLabel.setText("Fetching data for " + symbol + "..."));
-            // TODO: getting bars for startDate is not enough. Need to preload the cache with bars needed for ValueAccumulators.
-            // TODO: Will need to find out what is the furthest back index # of days we need to go back to get our bars.
             LocalDate today = LocalDate.now();
             List<Bar> bars = historicalDataService.getHistoricalData(symbol, today.minusYears(2), endDate);
             
@@ -137,7 +135,7 @@ public class BacktesterController {
 
             if (!strategyScript.trim().isEmpty()) {
                 try {
-                    strategyRunner.run(strategyScript);
+                    strategyRunner.run(strategyScript, startDate, endDate);
                 } catch (Exception e) {
                     throw new RuntimeException("Strategy parsing failed: " + e.getMessage());
                 }

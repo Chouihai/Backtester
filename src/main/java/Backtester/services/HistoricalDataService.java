@@ -7,8 +7,5 @@ import java.util.List;
 
 public interface HistoricalDataService {
 
-    /**
-     * Fetches historical daily data for a security within the specified date range.
-     */
     List<Bar> getHistoricalData(String symbol, LocalDate startDate, LocalDate endDate);
 } 
