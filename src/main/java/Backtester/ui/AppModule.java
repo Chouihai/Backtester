@@ -2,8 +2,6 @@ package Backtester.ui;
 
 import Backtester.services.BusinessDayService;
 import Backtester.services.DefaultBusinessDayService;
-import Backtester.caches.BarCache;
-import Backtester.caches.InMemoryBarCache;
 import Backtester.caches.OrderCache;
 import Backtester.caches.InMemoryOrderCache;
 import Backtester.caches.ValueAccumulatorCache;
@@ -30,7 +28,6 @@ public class AppModule extends AbstractModule {
         bind(BusinessDayService.class).to(DefaultBusinessDayService.class).in(Singleton.class);
         
         // In-memory caches
-        bind(BarCache.class).to(InMemoryBarCache.class).in(Singleton.class);
         bind(OrderCache.class).to(InMemoryOrderCache.class).in(Singleton.class);
         bind(ValueAccumulatorCache.class).in(Singleton.class);
     }

@@ -10,6 +10,8 @@ import Backtester.script.ScriptEvaluator;
 import Backtester.script.tokens.Parser;
 import com.google.inject.Inject;
 
+import java.util.List;
+
 public class StrategyRunner {
 
     private ScriptEvaluator evaluator;
@@ -26,10 +28,18 @@ public class StrategyRunner {
         this.positionManager = positionManager;
     }
 
+    public void run(String strategy, List<Bar> bars) {
+        initialize(strategy, bars.getFirst());
+        bars.removeFirst();
+        for (Bar bar: bars) {
+            roll(bar);
+        }
+    }
+
     /**
      * Get all functions and value accumulators needed
      */
-    public void initialize(String strategy, String symbol, Bar initialBar) {
+    public void initialize(String strategy, Bar initialBar) {
         CompiledScript compiled = new Parser().parse(strategy);
         ScriptFunctionRegistry registry = scriptFunctionRegistryFactory.createRegistry(compiled.functionCalls(), initialBar);
         this.evaluator = new ScriptEvaluator(compiled, registry, valueAccumulatorCache);

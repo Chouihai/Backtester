@@ -1,5 +1,6 @@
 package Backtester.ui;
 
+import Backtester.caches.BarCache;
 import Backtester.objects.Bar;
 import Backtester.objects.Security;
 import Backtester.objects.Trade;
@@ -31,7 +32,7 @@ public class BacktesterController {
     // Services
     private final HistoricalDataService historicalDataService;
     private final StrategyRunner strategyRunner;
-    private final ScriptEvaluator scriptEvaluator;
+    private final BarCache barCache;
 
     // UI Components
     public TextField symbolField;
@@ -49,16 +50,15 @@ public class BacktesterController {
     public ProgressBar progressBar;
     public Label statusLabel;
 
-    // Data
     private ObservableList<Trade> tradesData = FXCollections.observableArrayList();
     private volatile boolean isRunning = false;
 
     public BacktesterController(HistoricalDataService historicalDataService, 
-                               StrategyRunner strategyRunner, 
-                               ScriptEvaluator scriptEvaluator) {
+                               StrategyRunner strategyRunner,
+                                BarCache barCache) {
         this.historicalDataService = historicalDataService;
         this.strategyRunner = strategyRunner;
-        this.scriptEvaluator = scriptEvaluator;
+        this.barCache = barCache;
     }
 
     @FXML
@@ -68,23 +68,12 @@ public class BacktesterController {
     }
 
     private void setupUI() {
-        // Initialize date pickers with default values
         startDatePicker.setValue(LocalDate.now().minusMonths(6));
         endDatePicker.setValue(LocalDate.now());
-        
-        // Initialize initial capital
         initialCapitalField.setText("100000");
-        
-        // Setup trades table
         tradesTable.setItems(tradesData);
-        
-        // Setup progress bar
         progressBar.setVisible(false);
-        
-        // Setup status
         statusLabel.setText("Ready to run backtest");
-        
-        // Disable stop button initially
         stopButton.setDisable(true);
     }
 
@@ -100,12 +89,10 @@ public class BacktesterController {
             return;
         }
 
-        // Validate inputs
         if (!validateInputs()) {
             return;
         }
 
-        // Start backtest in background thread
         CompletableFuture.runAsync(() -> {
             try {
                 runBacktestAsync();
@@ -129,14 +116,12 @@ public class BacktesterController {
         });
 
         try {
-            // Get inputs
             String symbol = symbolField.getText().trim().toUpperCase();
             LocalDate startDate = startDatePicker.getValue();
             LocalDate endDate = endDatePicker.getValue();
             double initialCapital = Double.parseDouble(initialCapitalField.getText());
             String strategyScript = strategyTextArea.getText();
 
-            // Fetch historical data
             Platform.runLater(() -> statusLabel.setText("Fetching data for " + symbol + "..."));
             List<Bar> bars = historicalDataService.getHistoricalData(symbol, startDate, endDate);
             
@@ -145,16 +130,10 @@ public class BacktesterController {
             }
 
             Platform.runLater(() -> statusLabel.setText("Running strategy..."));
-            
-            // Create security object (using a simple constructor for now)
-            Security security = new Security(1, symbol, symbol, "NYSE", java.time.LocalDateTime.now());
-            
-            // Parse and validate strategy
+
             if (!strategyScript.trim().isEmpty()) {
                 try {
-                    // Create evaluation context for validation
-                    Backtester.script.EvaluationContext context = new Backtester.script.EvaluationContext(bars.get(0));
-                    scriptEvaluator.evaluate(context);
+                    strategyRunner.run(strategyScript, barCache.getBars(startDate, endDate));
                 } catch (Exception e) {
                     throw new RuntimeException("Strategy parsing failed: " + e.getMessage());
                 }
@@ -180,13 +159,11 @@ public class BacktesterController {
     }
 
     private boolean validateInputs() {
-        // Validate symbol
         if (symbolField.getText().trim().isEmpty()) {
             showAlert("Invalid Input", "Please enter a stock symbol.");
             return false;
         }
 
-        // Validate dates
         if (startDatePicker.getValue() == null || endDatePicker.getValue() == null) {
             showAlert("Invalid Input", "Please select both start and end dates.");
             return false;
@@ -197,7 +174,8 @@ public class BacktesterController {
             return false;
         }
 
-        // Validate initial capital
+        // TODO: will need to validate strategy. Probably parse and collect any errors from that.
+
         try {
             double capital = Double.parseDouble(initialCapitalField.getText());
             if (capital <= 0) {
@@ -213,21 +191,17 @@ public class BacktesterController {
     }
 
     private void updateResults(List<Trade> trades, List<Bar> bars, double initialCapital) {
-        // Update trades table
         tradesData.clear();
         tradesData.addAll(trades);
 
-        // Calculate performance metrics
         double totalReturn = calculateTotalReturn(trades, initialCapital);
         double maxDrawdown = calculateMaxDrawdown(trades, bars);
         double sharpeRatio = calculateSharpeRatio(trades, bars);
 
-        // Update performance labels
         totalReturnLabel.setText(String.format("%.2f%%", totalReturn * 100));
         maxDrawdownLabel.setText(String.format("%.2f%%", maxDrawdown * 100));
         sharpeRatioLabel.setText(String.format("%.2f", sharpeRatio));
 
-        // Update chart (placeholder for now)
         updateChart(bars, trades);
     }
 
@@ -246,6 +220,7 @@ public class BacktesterController {
         return (finalValue - initialCapital) / initialCapital;
     }
 
+    // TODO: this should be done by PositionManager not this
     private double calculateMaxDrawdown(List<Trade> trades, List<Bar> bars) {
         // Simplified max drawdown calculation
         if (trades.isEmpty() || bars.isEmpty()) return 0.0;
@@ -266,6 +241,7 @@ public class BacktesterController {
         return maxDrawdown;
     }
 
+    // TODO: this should be done by PositionManager not this
     private double calculateSharpeRatio(List<Trade> trades, List<Bar> bars) {
         // Simplified Sharpe ratio calculation
         if (trades.isEmpty() || bars.size() < 2) return 0.0;

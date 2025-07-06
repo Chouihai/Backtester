@@ -1,11 +1,10 @@
 package Backtester.ui;
 
 import Backtester.AppModule;
-import Backtester.script.ScriptEvaluator;
+import Backtester.caches.BarCache;
 import Backtester.services.HistoricalDataService;
 import Backtester.strategies.StrategyRunner;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -31,10 +30,10 @@ public class BacktesterApplication extends Application {
         // Get services from dependency injection
         HistoricalDataService historicalDataService = injector.getInstance(HistoricalDataService.class);
         StrategyRunner strategyRunner = injector.getInstance(StrategyRunner.class);
-        ScriptEvaluator scriptEvaluator = injector.getInstance(ScriptEvaluator.class);
+        BarCache barCache = injector.getInstance(BarCache.class);
         
         // Create controller with injected services
-        controller = new BacktesterController(historicalDataService, strategyRunner, scriptEvaluator);
+        controller = new BacktesterController(historicalDataService, strategyRunner, barCache);
         
         // Create the UI using the controller
         Parent root = createUI();

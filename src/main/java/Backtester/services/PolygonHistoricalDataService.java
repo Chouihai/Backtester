@@ -37,15 +37,12 @@ public class PolygonHistoricalDataService implements HistoricalDataService {
 
     @Override
     public List<Bar> getHistoricalData(String symbol, LocalDate startDate, LocalDate endDate) {
-        // Create cache key
-        String cacheKey = createCacheKey(symbol, startDate, endDate);
-        
-        // Check if data is already cached
-        Map<LocalDate, Bar> cachedBars = barCache.getBars();
-        if (!cachedBars.isEmpty()) {
-            logger.info("Using cached data for {} from {} to {}", symbol, startDate, endDate);
-            return filterBarsByDateRange(cachedBars, startDate, endDate);
-        }
+        // TODO: Cache API data later, for now just going straight ahead and loading everything in the cache.
+//        Map<LocalDate, Bar> cachedBars = barCache.getBars();
+//        if (!cachedBars.isEmpty()) {
+//            logger.info("Using cached data for {} from {} to {}", symbol, startDate, endDate);
+//            return filterBarsByDateRange(cachedBars, startDate, endDate);
+//        }
 
         // Fetch data from API
         logger.info("Fetching historical data for {} from {} to {}", symbol, startDate, endDate);

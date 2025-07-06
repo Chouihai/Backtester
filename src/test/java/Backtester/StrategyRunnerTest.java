@@ -31,7 +31,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import Backtester.caches.BarCache;
 import Backtester.caches.OrderCache;
 import Backtester.caches.ValueAccumulatorCache;
-import Backtester.caches.InMemoryBarCache;
 
 public class StrategyRunnerTest {
 
@@ -92,7 +91,7 @@ public class StrategyRunnerTest {
 
             bars.put(date, value);
         }
-        barCache = new InMemoryBarCache(businessDayService);
+        barCache = new BarCache(businessDayService);
         barCache.loadCache(bars);
     }
 
@@ -116,13 +115,13 @@ public class StrategyRunnerTest {
             currentDate = businessDayService.nextBusinessDay(currentDate);
         }
 
-        BarCache inMemoryBarCache = new InMemoryBarCache(businessDayService);
+        BarCache inMemoryBarCache = new BarCache(businessDayService);
         inMemoryBarCache.loadCache(initialValues);
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
         ValueAccumulatorCache vaCache = injector.getInstance(ValueAccumulatorCache.class);
 
-        runner.initialize(script, "AAPL", new Bar(LocalDate.of(2024, 3, 14), 0, 0,0,100,0));
+        runner.initialize(script, new Bar(LocalDate.of(2024, 3, 14), 0, 0,0,100,0));
 //        runner.roll(new Bar(LocalDate.of(2024, 3, 15), 0, 0,0,100,0));
         SmaCalculator va = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(20));
         assertEquals(100, va.getAverage());
@@ -150,14 +149,14 @@ public class StrategyRunnerTest {
             initialValues.put(currentDate, new Bar(currentDate, 0, 0,0,100,0));
             currentDate = businessDayService.nextBusinessDay(currentDate);
         }
-        BarCache inMemoryBarCache = new InMemoryBarCache(businessDayService);
+        BarCache inMemoryBarCache = new BarCache(businessDayService);
         inMemoryBarCache.loadCache(initialValues);
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
         StrategyRunner runner = injector.getInstance(StrategyRunner.class);
         ValueAccumulatorCache vaCache = injector.getInstance(ValueAccumulatorCache.class);
 
         // We initialize by setting sma20 lower than sma50
-        runner.initialize(script, "AAPL", new Bar(LocalDate.of(2024, 3, 14), 0, 0,0,90,0));
+        runner.initialize(script, new Bar(LocalDate.of(2024, 3, 14), 0, 0,0,90,0));
         SmaCalculator sma20 = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(20));
         SmaCalculator sma50 = (SmaCalculator) vaCache.getValueAccumulator(new SmaKey(50));
         CrossoverDetector cd1 = (CrossoverDetector) vaCache.getValueAccumulator(new CrossoverKey(new SmaKey(20), new SmaKey(50)));
@@ -196,7 +195,7 @@ public class StrategyRunnerTest {
                     createOrder("position1", false, 1000)
                 """;
 
-        BarCache inMemoryBarCache = new InMemoryBarCache(businessDayService);
+        BarCache inMemoryBarCache = new BarCache(businessDayService);
 
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
 
@@ -213,7 +212,7 @@ public class StrategyRunnerTest {
 
         inMemoryBarCache.loadCache(initialValues);
 
-        runner.initialize(script, "AAPL", bars.get(currentDate));
+        runner.initialize(script, bars.get(currentDate));
         currentDate = businessDayService.nextBusinessDay(currentDate);
 
         while (currentDate.isBefore(endDate) || currentDate.equals(endDate)) {
@@ -252,7 +251,7 @@ public class StrategyRunnerTest {
                     createOrder("position1", false, 500)
                 """;
 
-        BarCache inMemoryBarCache = new InMemoryBarCache(businessDayService);
+        BarCache inMemoryBarCache = new BarCache(businessDayService);
 
 
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
@@ -270,7 +269,7 @@ public class StrategyRunnerTest {
 
         inMemoryBarCache.loadCache(initialValues);
 
-        runner.initialize(script, "AAPL", bars.get(currentDate));
+        runner.initialize(script, bars.get(currentDate));
         currentDate = businessDayService.nextBusinessDay(currentDate);
 
         while (currentDate.isBefore(endDate) || currentDate.equals(endDate)) {
@@ -301,7 +300,7 @@ public class StrategyRunnerTest {
                     createOrder("position1", false, 1000)
                 """;
 
-        BarCache inMemoryBarCache = new InMemoryBarCache(businessDayService);
+        BarCache inMemoryBarCache = new BarCache(businessDayService);
 
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
 
@@ -318,7 +317,7 @@ public class StrategyRunnerTest {
 
         inMemoryBarCache.loadCache(initialValues);
 
-        runner.initialize(script, "AAPL", bars.get(currentDate));
+        runner.initialize(script, bars.get(currentDate));
         currentDate = businessDayService.nextBusinessDay(currentDate);
 
         while (currentDate.isBefore(endDate) || currentDate.equals(endDate)) {
@@ -362,7 +361,7 @@ public class StrategyRunnerTest {
                     createOrder("position1", false, 500)
                 """;
 
-        BarCache inMemoryBarCache = new InMemoryBarCache(businessDayService);
+        BarCache inMemoryBarCache = new BarCache(businessDayService);
 
         injector = Guice.createInjector(new MyModule(inMemoryBarCache));
 
@@ -379,7 +378,7 @@ public class StrategyRunnerTest {
 
         inMemoryBarCache.loadCache(initialValues);
 
-        runner.initialize(script, "AAPL", bars.get(currentDate));
+        runner.initialize(script, bars.get(currentDate));
         currentDate = businessDayService.nextBusinessDay(currentDate);
 
         while (currentDate.isBefore(endDate) || currentDate.equals(endDate)) {
