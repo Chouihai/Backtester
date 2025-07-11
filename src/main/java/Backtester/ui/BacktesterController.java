@@ -242,10 +242,10 @@ public class BacktesterController {
         setLabelColor(netProfitLabel, netProfit);
         
         grossProfitLabel.setText(formatCurrency(grossProfit));
-        setLabelColor(grossProfitLabel, grossProfit);
+        grossProfitLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #27ae60;"); // Always green
         
         grossLossLabel.setText(formatCurrency(grossLoss));
-        setLabelColor(grossLossLabel, grossLoss);
+        grossLossLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #e74c3c;"); // Always red
         
         openPnLLabel.setText(formatCurrency(openPnL));
         setLabelColor(openPnLLabel, openPnL);

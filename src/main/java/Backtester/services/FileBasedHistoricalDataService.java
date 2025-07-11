@@ -10,6 +10,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -20,10 +23,12 @@ public class FileBasedHistoricalDataService implements HistoricalDataService {
 
     private static final Logger logger = LoggerFactory.getLogger(FileBasedHistoricalDataService.class);
     private final BarCache barCache;
+    private final ConfigurationService configService;
 
     @Inject
-    public FileBasedHistoricalDataService(BarCache barCache) {
+    public FileBasedHistoricalDataService(BarCache barCache, ConfigurationService configService) {
         this.barCache = barCache;
+        this.configService = configService;
     }
 
     @Override
@@ -62,8 +67,9 @@ public class FileBasedHistoricalDataService implements HistoricalDataService {
             // Load data into cache
             barCache.loadCache(bars);
 
-            logger.info("Successfully loaded {} bars for {} from file",
-                    bars.size(), symbol);
+            String filePath = configService.getFilePath();
+            logger.info("Successfully loaded {} bars for {} from file: {}",
+                    bars.size(), symbol, filePath);
 
             return new ArrayList<>(bars);
 
@@ -75,9 +81,23 @@ public class FileBasedHistoricalDataService implements HistoricalDataService {
     }
 
     private String loadJsonFile() throws IOException {
-        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("AAPL2.json")) {
+        String filePath = configService.getFilePath();
+        logger.info("Loading data from file: {}", filePath);
+        
+        // First try to load from the configured file path
+        Path path = Paths.get(filePath);
+        if (Files.exists(path)) {
+            try {
+                return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                logger.warn("Could not load from configured path {}, falling back to resources", filePath);
+            }
+        }
+        
+        // Fallback to resources
+        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("AAPL.JSON")) {
             if (inputStream == null) {
-                throw new RuntimeException("AAPL2.json file not found in resources");
+                throw new RuntimeException("No data file found. Please check the file path in backtester-config.properties");
             }
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }

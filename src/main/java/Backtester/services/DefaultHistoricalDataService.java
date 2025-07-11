@@ -22,13 +22,13 @@ import java.util.List;
 public class DefaultHistoricalDataService implements HistoricalDataService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultHistoricalDataService.class);
-    private final String apiKey;
     private final BarCache barCache;
+    private final ConfigurationService configService;
 
     @Inject
-    public DefaultHistoricalDataService(@Named("api.key") String apiKey, BarCache barCache) {
-        this.apiKey = apiKey;
+    public DefaultHistoricalDataService(BarCache barCache, ConfigurationService configService) {
         this.barCache = barCache;
+        this.configService = configService;
     }
 
     @Override
@@ -39,6 +39,11 @@ public class DefaultHistoricalDataService implements HistoricalDataService {
 
     private List<Bar> fetchDataFromAlphaVantage(String symbol) {
         try {
+            String apiKey = configService.getApiKey();
+            if (!configService.isApiKeyValid()) {
+                throw new RuntimeException("API key is not configured. Please set a valid API key in backtester-config.properties");
+            }
+            
             // Alpha Vantage TIME_SERIES_DAILY endpoint - fetch full available history
             String urlStr = String.format(
                     "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=%s&outputsize=full&apikey=%s",

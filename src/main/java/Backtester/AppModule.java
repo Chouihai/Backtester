@@ -4,9 +4,10 @@ import Backtester.caches.OrderCache;
 import Backtester.caches.InMemoryOrderCache;
 import Backtester.caches.ValueAccumulatorCache;
 import Backtester.caches.BarCache;
-import Backtester.services.DefaultHistoricalDataService;
-import Backtester.services.FileBasedHistoricalDataService;
+import Backtester.services.ConfigurationService;
+import Backtester.services.HistoricalDataServiceFactory;
 import Backtester.services.HistoricalDataService;
+import Backtester.services.HistoricalDataServiceProvider;
 import Backtester.objects.valueaccumulator.ValueAccumulatorFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
@@ -32,8 +33,9 @@ public class AppModule extends AbstractModule {
 
         Names.bindProperties(binder(), properties);
         
-        // Services - Use file-based service for testing (no API rate limits)
-        bind(HistoricalDataService.class).to(FileBasedHistoricalDataService.class).in(Singleton.class);
+        bind(ConfigurationService.class).in(Singleton.class);
+        bind(HistoricalDataServiceFactory.class).in(Singleton.class);
+        bind(HistoricalDataService.class).toProvider(HistoricalDataServiceProvider.class).in(Singleton.class);
         
         // In-memory caches
         bind(OrderCache.class).to(InMemoryOrderCache.class).in(Singleton.class);
