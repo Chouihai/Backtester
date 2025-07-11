@@ -7,7 +7,7 @@ A JavaFX-based stock trading strategy backtester application that allows you to 
 This application provides a graphical interface for backtesting stock trading strategies. It features:
 
 - **Custom Scripting Language**: Write trading strategies using a simple, Python-like syntax
-- **Real-time Data**: Fetch historical data from Alpha Vantage API or use local JSON files
+- **Flexible Data Sources**: Fetch historical data from Alpha Vantage API or use local JSON files
 - **Performance Metrics**: Track profit/loss, drawdown, run-up, and Sharpe ratio
 - **Trade Management**: Visualize trades and positions with detailed analytics
 - **Configuration Management**: Flexible configuration for data sources and API keys
@@ -171,6 +171,30 @@ if (crossover(sma50, sma20))
 ### Data Sources
 
 #### File-based Data
+The application supports JSON. Your JSON objects should have:
+- Date strings as keys (ISO format: `YYYY-MM-DD`)
+- OHLCV (Open, High, Low, Close, Volume) data
+
+**Example JSON format:**
+```json
+{
+  "2024-01-01": {
+    "open": 100.50,
+    "high": 105.20,
+    "low": 99.80,
+    "close": 103.45,
+    "volume": 1000000
+  },
+  "2024-01-02": {
+    "o": 103.45,
+    "h": 107.30,
+    "l": 102.90,
+    "c": 106.20,
+    "v": 1200000
+  }
+}
+```
+
 ```properties
 dataSource=file
 filePath=AAPL.JSON
@@ -217,8 +241,9 @@ The application tracks several key performance indicators:
    - Check API rate limits (5 calls per minute for free tier)
 
 3. **Data File Not Found**:
-   - Ensure `AAPL.JSON` exists in `src/main/resources/`
+   - Ensure your JSON file exists in the specified path
    - Check file path in configuration
+   - Verify JSON format has date keys and OHLCV data
 
 4. **Compilation Errors**:
    - Run `mvn clean compile` to rebuild
