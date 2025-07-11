@@ -45,6 +45,10 @@ public class BacktesterController {
     public Label netProfitLabel;
     public Label grossProfitLabel;
     public Label grossLossLabel;
+    public Label openPnLLabel;
+    public Label maxDrawdownLabel;
+    public Label maxRunUpLabel;
+    public Label sharpeRatioLabel;
     public ProgressBar progressBar;
     public Label statusLabel;
 
@@ -229,12 +233,38 @@ public class BacktesterController {
         double netProfit = positionManager.netProfit();
         double grossProfit = positionManager.grossProfit();
         double grossLoss = positionManager.grossLoss();
+        double openPnL = positionManager.openPnL();
+        double maxDrawdown = positionManager.maxDrawdown();
+        double maxRunUp = positionManager.maxRunUp();
+        double sharpeRatio = positionManager.sharpeRatio();
 
-        netProfitLabel.setText(String.format("%.2f%%", netProfit));
-        grossProfitLabel.setText(String.format("%.2f%%", grossProfit));
-        grossLossLabel.setText(String.format("%.2f", grossLoss));
+        netProfitLabel.setText(formatCurrency(netProfit));
+        grossProfitLabel.setText(formatCurrency(grossProfit));
+        grossLossLabel.setText(formatCurrency(grossLoss));
+        openPnLLabel.setText(formatCurrency(openPnL));
+        maxDrawdownLabel.setText(formatPercentage(maxDrawdown));
+        maxRunUpLabel.setText(formatPercentage(maxRunUp));
+        sharpeRatioLabel.setText(formatDecimal(sharpeRatio));
 
         updateChart();
+    }
+
+    private String formatCurrency(double value) {
+        return String.format("$%,.2f", value);
+    }
+
+    private String formatPercentage(double value) {
+        if (Double.isNaN(value)) {
+            return "0.00%";
+        }
+        return String.format("%.2f%%", value * 100);
+    }
+
+    private String formatDecimal(double value) {
+        if (Double.isNaN(value)) {
+            return "0.00";
+        }
+        return String.format("%.2f", value);
     }
 
     public double openPnl(Trade trade) {
@@ -244,10 +274,12 @@ public class BacktesterController {
     private void updateChart() {
         // Placeholder for chart update
         // TODO: Implement chart visualization
-        chartContainer.getChildren().clear();
-        Label chartLabel = new Label("Chart visualization coming soon...");
-        chartLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");
-        chartContainer.getChildren().add(chartLabel);
+        if (chartContainer != null) {
+            chartContainer.getChildren().clear();
+            Label chartLabel = new Label("Chart visualization coming soon...");
+            chartLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");
+            chartContainer.getChildren().add(chartLabel);
+        }
     }
 
     @FXML

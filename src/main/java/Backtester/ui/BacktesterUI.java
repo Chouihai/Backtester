@@ -5,6 +5,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -218,35 +219,68 @@ public class BacktesterUI {
         metricsGrid.setVgap(10);
         metricsGrid.setAlignment(Pos.CENTER_LEFT);
         
-        // Create metric displays
+        // Create metric displays (value + percent)
         Label netProfitLabel = new Label("Net Profit:");
         netProfitLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        Label netProfitValue = new Label("0.00%");
+        Label netProfitValue = new Label("$0.00 (0%)");
         netProfitValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
-        
+
         Label grossProfitLabel = new Label("Gross Profit:");
         grossProfitLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        Label grossProfitValue = new Label("0.00%");
+        Label grossProfitValue = new Label("$0.00 (0%)");
         grossProfitValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
-        
+
         Label grossLossLabel = new Label("Gross Loss:");
         grossLossLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        Label grossLossValue = new Label("0.00");
+        Label grossLossValue = new Label("$0.00 (0%)");
         grossLossValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
-        
-        // Add to grid
+
+        Label openPnLLabel = new Label("Open PnL:");
+        openPnLLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+        Label openPnLValue = new Label("$0.00 (0%)");
+        openPnLValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
+
+        Label maxDrawdownLabel = new Label("Max Drawdown:");
+        maxDrawdownLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+        Label maxDrawdownValue = new Label("$0.00 (0%)");
+        maxDrawdownValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
+
+        Label maxRunUpLabel = new Label("Max Run Up:");
+        maxRunUpLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+        Label maxRunUpValue = new Label("$0.00 (0%)");
+        maxRunUpValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
+
+        Label sharpeRatioLabel = new Label("Sharpe Ratio:");
+        sharpeRatioLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+        Label sharpeRatioValue = new Label("0.00 (0%)");
+        sharpeRatioValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
+
+        // Add to grid (2 rows, 4 columns)
         metricsGrid.add(netProfitLabel, 0, 0);
         metricsGrid.add(netProfitValue, 1, 0);
         metricsGrid.add(grossProfitLabel, 2, 0);
         metricsGrid.add(grossProfitValue, 3, 0);
-        
-        metricsGrid.add(grossLossLabel, 0, 1);
-        metricsGrid.add(grossLossValue, 1, 1);
-        
+        metricsGrid.add(grossLossLabel, 4, 0);
+        metricsGrid.add(grossLossValue, 5, 0);
+        metricsGrid.add(openPnLLabel, 6, 0);
+        metricsGrid.add(openPnLValue, 7, 0);
+
+        metricsGrid.add(maxDrawdownLabel, 0, 1);
+        metricsGrid.add(maxDrawdownValue, 1, 1);
+        metricsGrid.add(maxRunUpLabel, 2, 1);
+        metricsGrid.add(maxRunUpValue, 3, 1);
+        metricsGrid.add(sharpeRatioLabel, 4, 1);
+        metricsGrid.add(sharpeRatioValue, 5, 1);
+        // Optionally leave columns 6,7 blank for symmetry
+
         // Connect to controller
         controller.netProfitLabel = netProfitValue;
         controller.grossProfitLabel = grossProfitValue;
         controller.grossLossLabel = grossLossValue;
+        controller.openPnLLabel = openPnLValue;
+        controller.maxDrawdownLabel = maxDrawdownValue;
+        controller.maxRunUpLabel = maxRunUpValue;
+        controller.sharpeRatioLabel = sharpeRatioValue;
         
         section.getChildren().addAll(title, metricsGrid);
         return section;
@@ -274,6 +308,17 @@ public class BacktesterUI {
         entryPriceCol.setPrefWidth(100);
         entryPriceCol.setCellValueFactory(data -> 
             new javafx.beans.property.SimpleDoubleProperty(data.getValue().entry.open).asObject());
+        entryPriceCol.setCellFactory(column -> new TableCell<Trade, Double>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(String.format("$%,.2f", item));
+                }
+            }
+        });
         
         TableColumn<Trade, String> exitDateCol = new TableColumn<>("Exit Date");
         exitDateCol.setPrefWidth(100);
@@ -292,6 +337,17 @@ public class BacktesterUI {
                 return new javafx.beans.property.SimpleDoubleProperty(0.0).asObject();
             } else {
                 return new javafx.beans.property.SimpleDoubleProperty(data.getValue().getExit().get().open).asObject();
+            }
+        });
+        exitPriceCol.setCellFactory(column -> new TableCell<Trade, Double>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null || item == 0.0) {
+                    setText(null);
+                } else {
+                    setText(String.format("$%,.2f", item));
+                }
             }
         });
         
@@ -316,9 +372,20 @@ public class BacktesterUI {
             Trade trade = data.getValue();
             if (trade.isOpen()) {
                 // For open trades, we'll need to get the current bar from the controller
-                return new javafx.beans.property.SimpleDoubleProperty(controller.openPnl(trade)).asObject(); // Placeholder
+                return new javafx.beans.property.SimpleDoubleProperty(controller.openPnl(trade)).asObject();
             } else {
                 return new javafx.beans.property.SimpleDoubleProperty(trade.profit()).asObject();
+            }
+        });
+        pnlCol.setCellFactory(column -> new TableCell<Trade, Double>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(String.format("$%,.2f", item));
+                }
             }
         });
         
