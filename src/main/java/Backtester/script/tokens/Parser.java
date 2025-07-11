@@ -12,13 +12,13 @@ import java.util.*;
 public class Parser {
 
     private List<Token> tokens;
-    private Map<String, Set<FunctionCall>> functionCalls;
+    private Set<String> functionCalls;
     private int current = 0;
 
     public CompiledScript parse(String s) {
         Tokenizer tokenizer = new Tokenizer(s);
         tokens = tokenizer.tokenize();
-        functionCalls = new HashMap<>();
+        functionCalls = new HashSet<>();
         List<Statement> statements = new ArrayList<>();
         while (!isAtEnd()) {
             while(check(TokenType.NEWLINE)) advance();
@@ -154,15 +154,7 @@ public class Parser {
 //                    return parseSeriesLiteral(identifier.lexeme, args);
 //                }
                 FunctionCall fn = new FunctionCall(identifier.lexeme, args);
-                Set<FunctionCall> previousCalls = functionCalls.get(fn.functionName);
-                if (previousCalls != null) {
-                    previousCalls.add(fn);
-                    functionCalls.put(fn.functionName, previousCalls);
-                } else {
-                    Set<FunctionCall> newCalls = new HashSet<>();
-                    newCalls.add(fn);
-                    functionCalls.put(fn.functionName, newCalls);
-                }
+                functionCalls.add(fn.functionName);
                 return fn;
             } else return new Identifier(identifier.lexeme);
         }

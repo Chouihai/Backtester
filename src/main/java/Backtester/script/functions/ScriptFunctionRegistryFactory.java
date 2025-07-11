@@ -3,12 +3,10 @@ package Backtester.script.functions;
 import Backtester.caches.OrderCache;
 import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.valueaccumulator.ValueAccumulatorFactory;
-import Backtester.script.statements.expressions.FunctionCall;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.slf4j.Logger;
 
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -32,17 +30,17 @@ public class ScriptFunctionRegistryFactory {
         this.valueAccumulatorFactory = valueAccumulatorFactory;
     }
 
-    public ScriptFunctionRegistry createRegistry(Map<String, Set<FunctionCall>> functionCalls) {
+    public ScriptFunctionRegistry createRegistry(Set<String> functionNames) {
         ScriptFunctionRegistry registry = new ScriptFunctionRegistry();
-        if (functionCalls.containsKey("createOrder")) {
+        if (functionNames.contains("createOrder")) {
             CreateOrderFn fn = new CreateOrderFn(orderCache);
             registry.register("createOrder", fn);
         }
-        if (functionCalls.containsKey("sma")) {
+        if (functionNames.contains("sma")) {
             SmaFunction fn = new SmaFunction(valueAccumulatorCache, valueAccumulatorFactory);
             registry.register("sma", fn);
         }
-        if (functionCalls.containsKey("crossover")) {
+        if (functionNames.contains("crossover")) {
             CrossoverFn fn = new CrossoverFn(valueAccumulatorCache);
             registry.register("crossover", fn);
         }
