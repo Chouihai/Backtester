@@ -99,6 +99,18 @@ public class PositionManager {
         return closeValue - entryValue;
     }
 
+    public double maxDrawdown() {
+        return Double.NaN; // TODO
+    }
+
+    public double maxRunUp() {
+        return Double.NaN; // TODO
+    }
+
+    public double sharpeRatio() {
+        return Double.NaN;
+    }
+
     public int openTrades() {
         return position.getTrades().stream().filter(Trade::isOpen).toList().size();
     }

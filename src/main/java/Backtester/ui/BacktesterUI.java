@@ -28,7 +28,7 @@ public class BacktesterUI {
         
         // 2. Strategy Editor Section
         VBox strategySection = createStrategySection();
-        
+
         // 3. Chart Section (placeholder)
 //        VBox chartSection = createChartSection();
         
@@ -40,8 +40,8 @@ public class BacktesterUI {
         
         // Add all sections to main layout
         mainLayout.getChildren().addAll(
-            inputSection,
             strategySection,
+            inputSection,
 //            chartSection,
             performanceSection,
             tradeHistorySection
@@ -162,19 +162,19 @@ public class BacktesterUI {
         strategyArea.setWrapText(true);
         strategyArea.setStyle("-fx-font-family: 'Consolas', 'Monaco', monospace; -fx-font-size: 12px;");
         
-        // Strategy controls
-        HBox strategyControls = new HBox(10);
-        Button loadButton = new Button("Load Strategy");
-        Button saveButton = new Button("Save Strategy");
-        Button clearButton = new Button("Clear");
-        
-        strategyControls.getChildren().addAll(loadButton, saveButton, clearButton);
-        strategyControls.setAlignment(Pos.CENTER_RIGHT);
+//        // Strategy controls later
+//        HBox strategyControls = new HBox(10);
+//        Button loadButton = new Button("Load Strategy");
+//        Button saveButton = new Button("Save Strategy");
+//        Button clearButton = new Button("Clear");
+//
+//        strategyControls.getChildren().addAll(loadButton, saveButton, clearButton);
+//        strategyControls.setAlignment(Pos.CENTER_RIGHT);
         
         // Connect to controller
         controller.strategyTextArea = strategyArea;
         
-        section.getChildren().addAll(title, strategyArea, strategyControls);
+        section.getChildren().addAll(title, strategyArea);
         return section;
     }
 
@@ -219,34 +219,34 @@ public class BacktesterUI {
         metricsGrid.setAlignment(Pos.CENTER_LEFT);
         
         // Create metric displays
-        Label totalReturnLabel = new Label("Total Return:");
-        totalReturnLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        Label totalReturnValue = new Label("0.00%");
-        totalReturnValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
+        Label netProfitLabel = new Label("Net Profit:");
+        netProfitLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+        Label netProfitValue = new Label("0.00%");
+        netProfitValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
         
-        Label maxDrawdownLabel = new Label("Max Drawdown:");
-        maxDrawdownLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        Label maxDrawdownValue = new Label("0.00%");
-        maxDrawdownValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
+        Label grossProfitLabel = new Label("Gross Profit:");
+        grossProfitLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+        Label grossProfitValue = new Label("0.00%");
+        grossProfitValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
         
-        Label sharpeRatioLabel = new Label("Sharpe Ratio:");
-        sharpeRatioLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        Label sharpeRatioValue = new Label("0.00");
-        sharpeRatioValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
+        Label grossLossLabel = new Label("Gross Loss:");
+        grossLossLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+        Label grossLossValue = new Label("0.00");
+        grossLossValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
         
         // Add to grid
-        metricsGrid.add(totalReturnLabel, 0, 0);
-        metricsGrid.add(totalReturnValue, 1, 0);
-        metricsGrid.add(maxDrawdownLabel, 2, 0);
-        metricsGrid.add(maxDrawdownValue, 3, 0);
+        metricsGrid.add(netProfitLabel, 0, 0);
+        metricsGrid.add(netProfitValue, 1, 0);
+        metricsGrid.add(grossProfitLabel, 2, 0);
+        metricsGrid.add(grossProfitValue, 3, 0);
         
-        metricsGrid.add(sharpeRatioLabel, 0, 1);
-        metricsGrid.add(sharpeRatioValue, 1, 1);
+        metricsGrid.add(grossLossLabel, 0, 1);
+        metricsGrid.add(grossLossValue, 1, 1);
         
         // Connect to controller
-        controller.totalReturnLabel = totalReturnValue;
-        controller.maxDrawdownLabel = maxDrawdownValue;
-        controller.sharpeRatioLabel = sharpeRatioValue;
+        controller.netProfitLabel = netProfitValue;
+        controller.grossProfitLabel = grossProfitValue;
+        controller.grossLossLabel = grossLossValue;
         
         section.getChildren().addAll(title, metricsGrid);
         return section;

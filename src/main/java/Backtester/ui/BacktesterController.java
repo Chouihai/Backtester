@@ -42,9 +42,9 @@ public class BacktesterController {
     public Button stopButton;
     public VBox chartContainer;
     public TableView<Trade> tradesTable;
-    public Label totalReturnLabel;
-    public Label maxDrawdownLabel;
-    public Label sharpeRatioLabel;
+    public Label netProfitLabel;
+    public Label grossProfitLabel;
+    public Label grossLossLabel;
     public ProgressBar progressBar;
     public Label statusLabel;
 
@@ -226,13 +226,13 @@ public class BacktesterController {
         tradesData.clear();
         tradesData.addAll(positionManager.allTrades());
 
-        double totalReturn = positionManager.netProfit();
-        double maxDrawdown = 0.0;
-        double sharpeRatio = 0.0;
+        double netProfit = positionManager.netProfit();
+        double grossProfit = positionManager.grossProfit();
+        double grossLoss = positionManager.grossLoss();
 
-        totalReturnLabel.setText(String.format("%.2f%%", totalReturn * 100));
-        maxDrawdownLabel.setText(String.format("%.2f%%", maxDrawdown * 100));
-        sharpeRatioLabel.setText(String.format("%.2f", sharpeRatio));
+        netProfitLabel.setText(String.format("%.2f%%", netProfit));
+        grossProfitLabel.setText(String.format("%.2f%%", grossProfit));
+        grossLossLabel.setText(String.format("%.2f", grossLoss));
 
         updateChart();
     }
