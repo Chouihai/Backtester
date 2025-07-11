@@ -222,37 +222,44 @@ public class BacktesterUI {
         // Create metric displays (value + percent)
         Label netProfitLabel = new Label("Net Profit:");
         netProfitLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        Label netProfitValue = new Label("$0.00 (0%)");
+        Label netProfitValue = new Label("$0.00");
+        // Label netProfitValue = new Label("$0.00 (0%)"); // TODO: Add percentage calculation
         netProfitValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
 
         Label grossProfitLabel = new Label("Gross Profit:");
         grossProfitLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        Label grossProfitValue = new Label("$0.00 (0%)");
+        Label grossProfitValue = new Label("$0.00");
+        // Label grossProfitValue = new Label("$0.00 (0%)"); // TODO: Add percentage calculation
         grossProfitValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
 
         Label grossLossLabel = new Label("Gross Loss:");
         grossLossLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        Label grossLossValue = new Label("$0.00 (0%)");
+        Label grossLossValue = new Label("$0.00");
+        // Label grossLossValue = new Label("$0.00 (0%)"); // TODO: Add percentage calculation
         grossLossValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
 
         Label openPnLLabel = new Label("Open PnL:");
         openPnLLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        Label openPnLValue = new Label("$0.00 (0%)");
+        Label openPnLValue = new Label("$0.00");
+        // Label openPnLValue = new Label("$0.00 (0%)"); // TODO: Add percentage calculation
         openPnLValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
 
         Label maxDrawdownLabel = new Label("Max Drawdown:");
         maxDrawdownLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        Label maxDrawdownValue = new Label("$0.00 (0%)");
+        Label maxDrawdownValue = new Label("$0.00");
+        // Label maxDrawdownValue = new Label("$0.00 (0%)"); // TODO: Add percentage calculation
         maxDrawdownValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
 
         Label maxRunUpLabel = new Label("Max Run Up:");
         maxRunUpLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        Label maxRunUpValue = new Label("$0.00 (0%)");
+        Label maxRunUpValue = new Label("$0.00");
+        // Label maxRunUpValue = new Label("$0.00 (0%)"); // TODO: Add percentage calculation
         maxRunUpValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
 
         Label sharpeRatioLabel = new Label("Sharpe Ratio:");
         sharpeRatioLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        Label sharpeRatioValue = new Label("0.00 (0%)");
+        Label sharpeRatioValue = new Label("0.00");
+        // Label sharpeRatioValue = new Label("0.00 (0%)"); // TODO: Add percentage calculation
         sharpeRatioValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
 
         // Add to grid (2 rows, 4 columns)
@@ -303,6 +310,7 @@ public class BacktesterUI {
         entryDateCol.setPrefWidth(100);
         entryDateCol.setCellValueFactory(data -> 
             new javafx.beans.property.SimpleStringProperty(data.getValue().getEntryBarDate().toString()));
+        entryDateCol.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold;");
         
         TableColumn<Trade, Double> entryPriceCol = new TableColumn<>("Entry Price");
         entryPriceCol.setPrefWidth(100);
@@ -314,11 +322,14 @@ public class BacktesterUI {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
+                    setStyle("");
                 } else {
                     setText(String.format("$%,.2f", item));
+                    setStyle("-fx-alignment: center-right;");
                 }
             }
         });
+        entryPriceCol.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold;");
         
         TableColumn<Trade, String> exitDateCol = new TableColumn<>("Exit Date");
         exitDateCol.setPrefWidth(100);
@@ -329,6 +340,7 @@ public class BacktesterUI {
                 return new javafx.beans.property.SimpleStringProperty(data.getValue().getExit().get().date.toString());
             }
         });
+        exitDateCol.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold;");
         
         TableColumn<Trade, Double> exitPriceCol = new TableColumn<>("Exit Price");
         exitPriceCol.setPrefWidth(100);
@@ -345,33 +357,38 @@ public class BacktesterUI {
                 super.updateItem(item, empty);
                 if (empty || item == null || item == 0.0) {
                     setText(null);
+                    setStyle("");
                 } else {
                     setText(String.format("$%,.2f", item));
+                    setStyle("-fx-alignment: center-right;");
                 }
             }
         });
+        exitPriceCol.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold;");
         
         TableColumn<Trade, String> sideCol = new TableColumn<>("Side");
         sideCol.setPrefWidth(80);
         sideCol.setCellValueFactory(data -> 
             new javafx.beans.property.SimpleStringProperty(data.getValue().getDirection().toString()));
+        sideCol.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold;");
         
         TableColumn<Trade, Integer> quantityCol = new TableColumn<>("Quantity");
         quantityCol.setPrefWidth(100);
         quantityCol.setCellValueFactory(data -> 
             new javafx.beans.property.SimpleIntegerProperty(data.getValue().getQuantity()).asObject());
+        quantityCol.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold;");
         
         TableColumn<Trade, String> statusCol = new TableColumn<>("Status");
         statusCol.setPrefWidth(100);
         statusCol.setCellValueFactory(data -> 
             new javafx.beans.property.SimpleStringProperty(data.getValue().isOpen() ? "Open" : "Closed"));
+        statusCol.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold;");
 
         TableColumn<Trade, Double> pnlCol = new TableColumn<>("PnL");
         pnlCol.setPrefWidth(100);
         pnlCol.setCellValueFactory(data -> {
             Trade trade = data.getValue();
             if (trade.isOpen()) {
-                // For open trades, we'll need to get the current bar from the controller
                 return new javafx.beans.property.SimpleDoubleProperty(controller.openPnl(trade)).asObject();
             } else {
                 return new javafx.beans.property.SimpleDoubleProperty(trade.profit()).asObject();
@@ -383,11 +400,21 @@ public class BacktesterUI {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
+                    setStyle("");
                 } else {
                     setText(String.format("$%,.2f", item));
+                    // setText(String.format("$%,.2f (0%%)", item)); // TODO: Add percentage calculation
+                    if (item > 0) {
+                        setStyle("-fx-alignment: center-right; -fx-text-fill: #27ae60;");
+                    } else if (item < 0) {
+                        setStyle("-fx-alignment: center-right; -fx-text-fill: #e74c3c;");
+                    } else {
+                        setStyle("-fx-alignment: center-right;");
+                    }
                 }
             }
         });
+        pnlCol.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold;");
         
         tradeTable.getColumns().addAll(entryDateCol, entryPriceCol, exitDateCol, exitPriceCol, sideCol, quantityCol, statusCol, pnlCol);
         

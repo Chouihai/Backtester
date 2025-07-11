@@ -239,12 +239,25 @@ public class BacktesterController {
         double sharpeRatio = positionManager.sharpeRatio();
 
         netProfitLabel.setText(formatCurrency(netProfit));
+        setLabelColor(netProfitLabel, netProfit);
+        
         grossProfitLabel.setText(formatCurrency(grossProfit));
+        setLabelColor(grossProfitLabel, grossProfit);
+        
         grossLossLabel.setText(formatCurrency(grossLoss));
+        setLabelColor(grossLossLabel, grossLoss);
+        
         openPnLLabel.setText(formatCurrency(openPnL));
+        setLabelColor(openPnLLabel, openPnL);
+        
         maxDrawdownLabel.setText(formatPercentage(maxDrawdown));
+        setLabelColor(maxDrawdownLabel, maxDrawdown);
+        
         maxRunUpLabel.setText(formatPercentage(maxRunUp));
+        setLabelColor(maxRunUpLabel, maxRunUp);
+        
         sharpeRatioLabel.setText(formatDecimal(sharpeRatio));
+        setLabelColor(sharpeRatioLabel, sharpeRatio);
 
         updateChart();
     }
@@ -279,6 +292,18 @@ public class BacktesterController {
             Label chartLabel = new Label("Chart visualization coming soon...");
             chartLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");
             chartContainer.getChildren().add(chartLabel);
+        }
+    }
+
+    private void setLabelColor(Label label, double value) {
+        if (Double.isNaN(value)) {
+            label.setStyle("-fx-font-size: 14px; -fx-text-fill: #333;");
+        } else if (value > 0) {
+            label.setStyle("-fx-font-size: 14px; -fx-text-fill: #27ae60;");
+        } else if (value < 0) {
+            label.setStyle("-fx-font-size: 14px; -fx-text-fill: #e74c3c;");
+        } else {
+            label.setStyle("-fx-font-size: 14px; -fx-text-fill: #333;");
         }
     }
 
