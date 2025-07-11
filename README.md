@@ -41,15 +41,9 @@ Backtester/
 
 ## Setup and Installation
 
-### 1. Clone the Repository
-```bash
-git clone <repository-url>
-cd HaitamStockProject
-```
+### 1. Clone the Repository and Configure the Application
 
-### 2. Configure the Application
-
-Create a `backtester-config.properties` file in the project root or `src/main/resources/`:
+There is a `backtester-config.properties` file in the project root or `src/main/resources/`:
 
 ```properties
 # Data source: "api" for Alpha Vantage, "file" for local JSON
@@ -62,7 +56,7 @@ filePath=AAPL.JSON
 apiKey=your_api_key_here
 ```
 
-### 3. Build the Project
+### 2. Build the Project
 ```bash
 mvn clean compile
 ```
@@ -92,7 +86,8 @@ mvn javafx:run
      - **Name**: `BacktesterApplication`
      - **Main class**: `Backtester.ui.BacktesterApplication`
      - **Module**: `backtester`
-     - **VM options**: `--enable-preview`
+     - **VM options**: ```--add-modules
+       javafx.controls,javafx.fxml --enable-native-access=ALL-UNNAMED```
      - **Working directory**: `$MODULE_DIR$`
 
 3. **Run the Application**:
@@ -148,11 +143,15 @@ Creates a new trading order.
 - **Returns**: void
 - **Example**: `createOrder("Long", true, 1000)`
 
-#### `closeOrder(orderId)`
-Closes an existing order.
-- **Arguments**: 1 (order ID)
-- **Returns**: void
-- **Example**: `closeOrder("position1")`
+[//]: # (#### `closeOrder&#40;orderId&#41;`)
+
+[//]: # (Closes an existing order.)
+
+[//]: # (- **Arguments**: 1 &#40;order ID&#41;)
+
+[//]: # (- **Returns**: void)
+
+[//]: # (- **Example**: `closeOrder&#40;"position1"&#41;`)
 
 ### Complete Strategy Example
 
@@ -198,9 +197,12 @@ The application tracks several key performance indicators:
 - **Gross Loss**: Total loss from losing trades
 - **Net Profit**: Gross profit minus gross loss
 - **Open P&L**: Current unrealized profit/loss
-- **Drawdown**: Maximum peak-to-trough decline
-- **Run-up**: Maximum trough-to-peak gain
-- **Sharpe Ratio**: Risk-adjusted return measure
+
+[//]: # (- **Drawdown**: Maximum peak-to-trough decline)
+
+[//]: # (- **Run-up**: Maximum trough-to-peak gain)
+
+[//]: # (- **Sharpe Ratio**: Risk-adjusted return measure)
 
 ## Troubleshooting
 
