@@ -72,7 +72,7 @@ public class Trade {
             double entryValue = entry.open * quantity;
             double exitValue = exit.get().open * quantity;
             int sign = isLong() ? 1 : -1;
-            return sign * exitValue - entryValue;
+            return sign * (exitValue - entryValue);
         }
     }
 
@@ -81,7 +81,7 @@ public class Trade {
         double entryValue = entry.open * quantity;
         double currentValue = currentBar.open * quantity;
         int sign = isLong() ? 1 : -1;
-        return sign * currentValue - entryValue;
+        return sign * (currentValue - entryValue);
     }
 
     public String getOrderId() {

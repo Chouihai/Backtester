@@ -97,7 +97,7 @@ public class PositionManager {
         double entryValue = trade.entry.open * trade.getQuantity();
         double closeValue = currentBar.open * trade.getQuantity();
         int sign = trade.isLong() ? 1 : -1;
-        return sign * closeValue - entryValue;
+        return sign * (closeValue - entryValue);
     }
 
     public double maxDrawdown() {
