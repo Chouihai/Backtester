@@ -15,6 +15,8 @@ import java.util.List;
 
 public class CrossoverFn implements ScriptFunction {
 
+    public static final String FUNCTION_NAME = "crossover";
+    public static final int EXPECTED_ARGUMENTS = 2; // valueAccumulator1, valueAccumulator2
     private final ValueAccumulatorCache valueAccumulatorCache;
     private final ValueAccumulatorKeyBuilder valueAccumulatorKeyBuilder = new ValueAccumulatorKeyBuilder();
 

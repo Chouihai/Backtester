@@ -68,14 +68,14 @@ public class ParserTest {
 
     @Test
     public void testFunctionCallExpression() {
-        List<Statement> stmts = parse("y = ema(close, 20)");
+        List<Statement> stmts = parse("y = sma(20)");
         VariableDeclaration decl = (VariableDeclaration) stmts.get(0);
 
         assertInstanceOf(FunctionCall.class, decl.initializer);
         FunctionCall call = (FunctionCall) decl.initializer;
 
-        assertEquals("ema", call.functionName);
-        assertEquals(2, call.arguments.size());
+        assertEquals("sma", call.functionName);
+        assertEquals(1, call.arguments.size());
     }
 
     @Test
@@ -88,10 +88,10 @@ public class ParserTest {
 
     @Test
     public void testExpressionStatement() {
-        List<Statement> stmts = parse("entry(\"Long\", true, 100)");
+        List<Statement> stmts = parse("createOrder(\"Long\", true, 100)");
         assertEquals(1, stmts.size());
         ExpressionStatement exp = (ExpressionStatement) stmts.getFirst();
-        assertEquals("entry", ((FunctionCall) exp.expression).functionName);
+        assertEquals("createOrder", ((FunctionCall) exp.expression).functionName);
         List<Expression> arguments = ((FunctionCall) exp.expression).arguments;
         assertEquals(3, arguments.size());
         assertEquals("Long", ((Literal) arguments.getFirst()).value);
@@ -103,7 +103,7 @@ public class ParserTest {
     public void testIfStatementWithOneLine() {
         List<Statement> stmts = parse("""
             if close > open
-                entry("Long", true, 100)
+                createOrder("Long", true, 100)
             """);
 
         assertEquals(1, stmts.size());

@@ -17,6 +17,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class CreateOrderFn implements ScriptFunction {
 
     private final Logger logger = null; // TODO: add logger later
+    public static final String FUNCTION_NAME = "createOrder";
+    public static final int EXPECTED_ARGUMENTS = 3; // name, isBuy, quantity
     private final static int MINIMUM_ARGUMENTS_SIZE = 2; // Later on might want to have required vs optional args
     private final static int MAXIMUM_ARGUMENTS_SIZE = 3; // Later on might want to have required vs optional args
     private final OrderCache orderCache;

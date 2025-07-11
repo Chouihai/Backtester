@@ -14,6 +14,8 @@ import java.util.List;
 
 public class SmaFunction implements ScriptFunction {
 
+    public static final String FUNCTION_NAME = "sma";
+    public static final int EXPECTED_ARGUMENTS = 1; // days
     private final ValueAccumulatorCache cache;
     private final ValueAccumulatorFactory factory;
 

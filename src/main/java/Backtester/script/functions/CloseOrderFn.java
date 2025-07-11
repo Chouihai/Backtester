@@ -8,7 +8,9 @@ import java.util.List;
 
 public class CloseOrderFn implements ScriptFunction {
 
-    private final static int ARGUMENTS_SIZE = 3; // Later on might want to have required vs optional args
+    public static final String FUNCTION_NAME = "closeOrder";
+    public static final int EXPECTED_ARGUMENTS = 1; // orderId
+    private final static int ARGUMENTS_SIZE = 1; // Later on might want to have required vs optional args
     private final OrderCache orderCache;
 //    private final BacktestRunPositionCache positionCache;
 

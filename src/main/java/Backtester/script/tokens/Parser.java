@@ -150,9 +150,7 @@ public class Parser {
                     } while (match(TokenType.COMMA));
                 }
                 consume(TokenType.RPAREN, "Expected ')' after arguments.");
-//                if (isSeries(identifier.lexeme)) {
-//                    return parseSeriesLiteral(identifier.lexeme, args);
-//                }
+                FunctionCall.validateArguments(identifier.lexeme, args.size());
                 FunctionCall fn = new FunctionCall(identifier.lexeme, args);
                 functionCalls.add(fn.functionName);
                 return fn;

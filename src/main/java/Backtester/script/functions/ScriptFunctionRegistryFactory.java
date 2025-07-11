@@ -32,18 +32,22 @@ public class ScriptFunctionRegistryFactory {
 
     public ScriptFunctionRegistry createRegistry(Set<String> functionNames) {
         ScriptFunctionRegistry registry = new ScriptFunctionRegistry();
-        if (functionNames.contains("createOrder")) {
+        
+        if (functionNames.contains(CreateOrderFn.FUNCTION_NAME)) {
             CreateOrderFn fn = new CreateOrderFn(orderCache);
-            registry.register("createOrder", fn);
+            registry.register(CreateOrderFn.FUNCTION_NAME, fn);
         }
-        if (functionNames.contains("sma")) {
+        
+        if (functionNames.contains(SmaFunction.FUNCTION_NAME)) {
             SmaFunction fn = new SmaFunction(valueAccumulatorCache, valueAccumulatorFactory);
-            registry.register("sma", fn);
+            registry.register(SmaFunction.FUNCTION_NAME, fn);
         }
-        if (functionNames.contains("crossover")) {
+        
+        if (functionNames.contains(CrossoverFn.FUNCTION_NAME)) {
             CrossoverFn fn = new CrossoverFn(valueAccumulatorCache);
-            registry.register("crossover", fn);
+            registry.register(CrossoverFn.FUNCTION_NAME, fn);
         }
+        
         return registry;
     }
 }
