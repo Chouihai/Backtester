@@ -7,6 +7,7 @@ import Backtester.objects.order.Order;
 import Backtester.objects.order.OrderSide;
 import Backtester.objects.order.OrderStatus;
 import Backtester.objects.order.OrderType;
+import Backtester.trades.PositionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

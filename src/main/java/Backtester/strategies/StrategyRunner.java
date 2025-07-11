@@ -9,6 +9,7 @@ import Backtester.script.ScriptEvaluator;
 import Backtester.script.functions.ScriptFunctionRegistry;
 import Backtester.script.functions.ScriptFunctionRegistryFactory;
 import Backtester.script.tokens.Parser;
+import Backtester.trades.PositionManager;
 import com.google.inject.Inject;
 
 import java.time.LocalDate;

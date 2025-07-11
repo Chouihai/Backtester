@@ -1,4 +1,4 @@
-package Backtester.strategies;
+package Backtester.trades;
 
 import Backtester.caches.OrderCache;
 import Backtester.objects.Bar;
@@ -96,7 +96,8 @@ public class PositionManager {
     public double openPnl(Trade trade) {
         double entryValue = trade.entry.open * trade.getQuantity();
         double closeValue = currentBar.open * trade.getQuantity();
-        return closeValue - entryValue;
+        int sign = trade.isLong() ? 1 : -1;
+        return sign * closeValue - entryValue;
     }
 
     public double maxDrawdown() {
@@ -108,7 +109,7 @@ public class PositionManager {
     }
 
     public double sharpeRatio() {
-        return Double.NaN;
+        return Double.NaN; // TODO
     }
 
     public int openTrades() {

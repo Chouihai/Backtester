@@ -2,14 +2,14 @@ package Backtester.ui;
 
 import Backtester.AppModule;
 import Backtester.services.HistoricalDataService;
-import Backtester.strategies.PositionManager;
 import Backtester.strategies.StrategyRunner;
+import Backtester.trades.PositionManager;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import javafx.application.Application;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 
 public class BacktesterApplication extends Application {
 

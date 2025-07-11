@@ -1,14 +1,17 @@
 package Backtester;
 
+import Backtester.caches.BarCache;
 import Backtester.caches.InMemoryOrderCache;
+import Backtester.caches.OrderCache;
+import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.Bar;
 import Backtester.objects.order.Order;
 import Backtester.objects.valueaccumulator.CrossoverDetector;
+import Backtester.objects.valueaccumulator.SmaCalculator;
 import Backtester.objects.valueaccumulator.key.CrossoverKey;
 import Backtester.objects.valueaccumulator.key.SmaKey;
-import Backtester.objects.valueaccumulator.SmaCalculator;
-import Backtester.strategies.PositionManager;
 import Backtester.strategies.StrategyRunner;
+import Backtester.trades.PositionManager;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
@@ -22,13 +25,11 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-
-import Backtester.caches.BarCache;
-import Backtester.caches.OrderCache;
-import Backtester.caches.ValueAccumulatorCache;
 
 public class StrategyRunnerTest {
 

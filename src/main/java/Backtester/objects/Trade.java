@@ -71,7 +71,8 @@ public class Trade {
         else {
             double entryValue = entry.open * quantity;
             double exitValue = exit.get().open * quantity;
-            return exitValue - entryValue;
+            int sign = isLong() ? 1 : -1;
+            return sign * exitValue - entryValue;
         }
     }
 
@@ -79,7 +80,8 @@ public class Trade {
         if (!exit.isEmpty()) return 0;
         double entryValue = entry.open * quantity;
         double currentValue = currentBar.open * quantity;
-        return currentValue - entryValue;
+        int sign = isLong() ? 1 : -1;
+        return sign * currentValue - entryValue;
     }
 
     public String getOrderId() {

@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * In memory cache, does not read anything from a database
+ * In memory cache
  */
 public interface OrderCache {
 
