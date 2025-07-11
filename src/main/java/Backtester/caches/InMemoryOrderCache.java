@@ -2,13 +2,15 @@ package Backtester.caches;
 
 import Backtester.objects.order.Order;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class InMemoryOrderCache implements OrderCache {
 
-    // You can have multiple orders under the same string Id
-    private final Map<Integer, Order> orderMap;
+    private Map<Integer, Order> orderMap;
 
     public InMemoryOrderCache() {
         this.orderMap = new HashMap<>();
@@ -32,5 +34,9 @@ public class InMemoryOrderCache implements OrderCache {
 
     public Map<Integer, Order> snapshot() {
         return orderMap;
+    }
+
+    public void reset() {
+        orderMap = new HashMap<>();
     }
 } 

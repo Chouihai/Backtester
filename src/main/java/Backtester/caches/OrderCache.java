@@ -17,4 +17,6 @@ public interface OrderCache {
     Set<Order> getOrders(String grouping);
 
     Map<Integer, Order> snapshot();
+
+    void reset();
 } 

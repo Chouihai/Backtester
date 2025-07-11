@@ -1,11 +1,8 @@
 package Backtester.strategies;
 
 import Backtester.caches.InMemoryOrderCache;
-import Backtester.strategies.PositionManager;
 import Backtester.caches.OrderCache;
 import Backtester.objects.Bar;
-import Backtester.objects.Position;
-import Backtester.objects.Trade;
 import Backtester.objects.order.Order;
 import Backtester.objects.order.OrderSide;
 import Backtester.objects.order.OrderStatus;
@@ -14,10 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class PositionManagerTest {
 
@@ -35,14 +30,14 @@ class PositionManagerTest {
     }
 
     private int getTotalOpenQuantity() {
-        return positionManager.getPosition().getTrades().stream()
+        return positionManager.allTrades().stream()
                 .filter(trade -> trade.isOpen())
                 .mapToInt(trade -> trade.getQuantity())
                 .sum();
     }
 
     private int getTotalClosedQuantity() {
-        return positionManager.getPosition().getTrades().stream()
+        return positionManager.allTrades().stream()
                 .filter(trade -> !trade.isOpen())
                 .mapToInt(trade -> trade.getQuantity())
                 .sum();

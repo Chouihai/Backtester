@@ -4,7 +4,9 @@ import Backtester.caches.OrderCache;
 import Backtester.objects.Bar;
 import Backtester.objects.Position;
 import Backtester.objects.Trade;
-import Backtester.objects.order.*;
+import Backtester.objects.order.Order;
+import Backtester.objects.order.OrderStatus;
+import Backtester.objects.order.OrderType;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -16,7 +18,7 @@ import java.util.List;
 public class PositionManager {
 
     private final OrderCache orderCache; // Orders will be filled immediately at the next open. Any order with status
-    private final Position position;
+    private Position position;
     private Bar currentBar;
     private static final Comparator<Trade> TRADE_ORDERING = Comparator.comparing(Trade::getEntryBarDate).thenComparing(Trade::getOrderId);
 
@@ -91,6 +93,12 @@ public class PositionManager {
         return sum;
     }
 
+    public double openPnl(Trade trade) {
+        double entryValue = trade.entry.open * trade.getQuantity();
+        double closeValue = currentBar.open * trade.getQuantity();
+        return closeValue - entryValue;
+    }
+
     public int openTrades() {
         return position.getTrades().stream().filter(Trade::isOpen).toList().size();
     }
@@ -105,6 +113,12 @@ public class PositionManager {
 
     public Position getPosition() {
         return position;
+    }
+
+    public void reset() {
+        this.position = new Position();
+        this.orderCache.reset();
+        this.currentBar = null;
     }
 
     private void applyToPosition(Order order, Bar bar) {

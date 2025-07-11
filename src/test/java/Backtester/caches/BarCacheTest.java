@@ -194,4 +194,189 @@ class BarCacheTest {
             barCache.getLastNDays(10, 0); // Only 1 day available at index 0
         });
     }
+
+
+
+    // ========== Tests for findIndexAfterDate ==========
+
+    @Test
+    void testFindIndexAfterDate_ExactMatches() {
+        barCache.loadCache(testBars);
+
+        // Test exact matches - should return the same index
+        assertEquals(0, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 1)));
+        assertEquals(1, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 2)));
+        assertEquals(2, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 3)));
+        assertEquals(3, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 4)));
+        assertEquals(4, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 5)));
+        assertEquals(5, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 6)));
+        assertEquals(6, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 7)));
+        assertEquals(7, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 8)));
+        assertEquals(8, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 9)));
+        assertEquals(9, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 10)));
+    }
+
+    @Test
+    void testFindIndexAfterDate_DateBeforeFirstBar() {
+        barCache.loadCache(testBars);
+
+        // Date before the first bar should return 0 (start from the beginning)
+        assertEquals(0, barCache.findIndexAfterDate(LocalDate.of(2022, 12, 31)));
+        assertEquals(0, barCache.findIndexAfterDate(LocalDate.of(2022, 1, 1)));
+    }
+
+    @Test
+    void testFindIndexAfterDate_DateAfterLastBar() {
+        barCache.loadCache(testBars);
+
+        // Date after the last bar should return -1 (no valid start point)
+        assertEquals(-1, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 11)));
+        assertEquals(-1, barCache.findIndexAfterDate(LocalDate.of(2023, 2, 1)));
+    }
+
+    @Test
+    void testFindIndexAfterDate_WeekendDates() {
+        barCache.loadCache(testBars);
+
+        // Test weekend dates that don't exist in the data
+        // 2023-01-01 is Sunday, 2023-01-02 is Monday
+        // If we ask for 2023-01-01 (Sunday), it should return index 0 (the first available date)
+        assertEquals(0, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 1)));
+
+        // If we ask for a date between existing dates, it should return the next available date
+        assertEquals(1, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 1).plusDays(1))); // 2023-01-02
+        assertEquals(2, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 2).plusDays(1))); // 2023-01-03
+    }
+
+    @Test
+    void testFindIndexAfterDate_EmptyCache() {
+        // Test with empty cache
+        assertEquals(-1, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 1)));
+    }
+
+    @Test
+    void testFindIndexAfterDate_SingleBar() {
+        List<Bar> singleBar = Arrays.asList(
+                new Bar(0, LocalDate.of(2023, 1, 1), 100.0, 105.0, 98.0, 102.0, 1000)
+        );
+        barCache.loadCache(singleBar);
+
+        assertEquals(0, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 1)));
+        assertEquals(0, barCache.findIndexAfterDate(LocalDate.of(2022, 12, 31))); // Before, should return 0
+        assertEquals(-1, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 2))); // After, should return -1
+    }
+
+    // ========== Tests for findIndexBeforeDate ==========
+
+    @Test
+    void testFindIndexBeforeDate_ExactMatches() {
+        barCache.loadCache(testBars);
+
+        // Test exact matches - should return the same index
+        assertEquals(0, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 1)));
+        assertEquals(1, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 2)));
+        assertEquals(2, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 3)));
+        assertEquals(3, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 4)));
+        assertEquals(4, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 5)));
+        assertEquals(5, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 6)));
+        assertEquals(6, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 7)));
+        assertEquals(7, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 8)));
+        assertEquals(8, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 9)));
+        assertEquals(9, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 10)));
+    }
+
+    @Test
+    void testFindIndexBeforeDate_DateBeforeFirstBar() {
+        barCache.loadCache(testBars);
+
+        // Date before the first bar should return -1 (no valid end point)
+        assertEquals(-1, barCache.findIndexBeforeDate(LocalDate.of(2022, 12, 31)));
+        assertEquals(-1, barCache.findIndexBeforeDate(LocalDate.of(2022, 1, 1)));
+    }
+
+    @Test
+    void testFindIndexBeforeDate_DateAfterLastBar() {
+        barCache.loadCache(testBars);
+
+        // Date after the last bar should return the last index
+        assertEquals(9, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 11)));
+        assertEquals(9, barCache.findIndexBeforeDate(LocalDate.of(2023, 2, 1)));
+    }
+
+    @Test
+    void testFindIndexBeforeDate_WeekendDates() {
+        barCache.loadCache(testBars);
+
+        // Test weekend dates that don't exist in the data
+        // If we ask for a date between existing dates, it should return the previous available date
+        assertEquals(1, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 1).plusDays(1))); // 2023-01-02 -> should return index 1 (exact match)
+        assertEquals(2, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 2).plusDays(1))); // 2023-01-03 -> should return index 2 (exact match)
+        assertEquals(9, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 10).plusDays(1))); // 2023-01-11 -> should return index 9 (last available)
+    }
+
+    @Test
+    void testFindIndexBeforeDate_EmptyCache() {
+        // Test with empty cache
+        assertEquals(-1, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 1)));
+    }
+
+    @Test
+    void testFindIndexBeforeDate_SingleBar() {
+        List<Bar> singleBar = Arrays.asList(
+                new Bar(0, LocalDate.of(2023, 1, 1), 100.0, 105.0, 98.0, 102.0, 1000)
+        );
+        barCache.loadCache(singleBar);
+
+        assertEquals(0, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 1)));
+        assertEquals(-1, barCache.findIndexBeforeDate(LocalDate.of(2022, 12, 31))); // Before, should return -1
+        assertEquals(0, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 2))); // After, should return 0
+    }
+
+    @Test
+    void testFindIndexBeforeDate_LargeDataset() {
+        // Create a larger dataset to test binary search efficiency
+        List<Bar> largeBars = new java.util.ArrayList<>();
+        LocalDate startDate = LocalDate.of(2020, 1, 1);
+
+        for (int i = 0; i < 1000; i++) {
+            LocalDate date = startDate.plusDays(i);
+            largeBars.add(new Bar(i, date, 100.0 + i, 105.0 + i, 98.0 + i, 102.0 + i, 1000 + i));
+        }
+
+        barCache.loadCache(largeBars);
+
+        // Test various dates in the large dataset
+        assertEquals(0, barCache.findIndexBeforeDate(LocalDate.of(2020, 1, 1)));
+        assertEquals(366, barCache.findIndexBeforeDate(LocalDate.of(2021, 1, 1))); // 2020 was a leap year
+        assertEquals(731, barCache.findIndexBeforeDate(LocalDate.of(2022, 1, 1)));
+        assertEquals(999, barCache.findIndexBeforeDate(startDate.plusDays(999))); // Last date
+
+        // Test dates not in the dataset
+        assertEquals(-1, barCache.findIndexBeforeDate(LocalDate.of(2019, 12, 31)));
+        assertEquals(999, barCache.findIndexBeforeDate(startDate.plusDays(1000)));
+    }
+
+    @Test
+    void testFindIndexAfterAndBefore_WeekendScenario() {
+        // Create bars with gaps (weekends/holidays)
+        List<Bar> barsWithGaps = Arrays.asList(
+                new Bar(0, LocalDate.of(2023, 1, 2), 100.0, 105.0, 98.0, 102.0, 1000), // Monday
+                new Bar(1, LocalDate.of(2023, 1, 3), 102.0, 108.0, 101.0, 106.0, 1100), // Tuesday
+                new Bar(2, LocalDate.of(2023, 1, 4), 106.0, 110.0, 104.0, 109.0, 1200), // Wednesday
+                new Bar(3, LocalDate.of(2023, 1, 5), 109.0, 112.0, 107.0, 111.0, 1300), // Thursday
+                new Bar(4, LocalDate.of(2023, 1, 6), 111.0, 115.0, 110.0, 114.0, 1400), // Friday
+                new Bar(5, LocalDate.of(2023, 1, 9), 114.0, 118.0, 113.0, 117.0, 1500), // Monday (next week)
+                new Bar(6, LocalDate.of(2023, 1, 10), 117.0, 120.0, 116.0, 119.0, 1600)  // Tuesday
+        );
+        barCache.loadCache(barsWithGaps);
+
+        // Test start date on weekend (should find next available date)
+        assertEquals(0, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 1))); // Sunday -> Monday
+        assertEquals(5, barCache.findIndexAfterDate(LocalDate.of(2023, 1, 7))); // Saturday -> Monday
+
+        // Test end date on weekend (should find previous available date)
+        assertEquals(4, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 7))); // Saturday -> Friday
+        assertEquals(4, barCache.findIndexBeforeDate(LocalDate.of(2023, 1, 8))); // Sunday -> Friday
+    }
+
 } 

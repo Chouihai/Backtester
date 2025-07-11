@@ -75,6 +75,13 @@ public class Trade {
         }
     }
 
+    public double openPnL(Bar currentBar) {
+        if (!exit.isEmpty()) return 0;
+        double entryValue = entry.open * quantity;
+        double currentValue = currentBar.open * quantity;
+        return currentValue - entryValue;
+    }
+
     public String getOrderId() {
         return orderId;
     }

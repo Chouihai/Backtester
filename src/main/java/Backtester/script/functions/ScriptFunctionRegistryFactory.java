@@ -2,10 +2,10 @@ package Backtester.script.functions;
 
 import Backtester.caches.OrderCache;
 import Backtester.caches.ValueAccumulatorCache;
-import Backtester.objects.Bar;
-import Backtester.objects.valueaccumulator.*;
+import Backtester.objects.valueaccumulator.ValueAccumulatorFactory;
 import Backtester.script.statements.expressions.FunctionCall;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -14,12 +14,13 @@ import java.util.Set;
 /**
  * Looks at the function names mentioned in the script and create a ScriptFunctionRegistry
  */
+@Singleton
 public class ScriptFunctionRegistryFactory {
 
     private final ValueAccumulatorCache valueAccumulatorCache;
     private final ValueAccumulatorFactory valueAccumulatorFactory;
     private final OrderCache orderCache;
-    private final Logger logger = null; // TODO inject this later
+    private final Logger logger = null;
 
 
     @Inject()

@@ -3,7 +3,6 @@ package Backtester.caches;
 import Backtester.objects.Bar;
 import Backtester.objects.valueaccumulator.ValueAccumulator;
 import Backtester.objects.valueaccumulator.key.ValueAccumulatorKey;
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import java.util.HashMap;
@@ -15,7 +14,7 @@ import java.util.Map;
 @Singleton
 public class ValueAccumulatorCache {
 
-    private final Map<ValueAccumulatorKey, ValueAccumulator<?>> valueAccumulators = new HashMap<>();
+    private Map<ValueAccumulatorKey, ValueAccumulator<?>> valueAccumulators = new HashMap<>();
 
     public boolean contains(ValueAccumulatorKey key) {
         return valueAccumulators.containsKey(key);
@@ -31,5 +30,9 @@ public class ValueAccumulatorCache {
 
     public void roll(Bar bar) {
         valueAccumulators.values().forEach(va -> va.roll(bar));
+    }
+
+    public void reset() {
+        valueAccumulators = new HashMap<>();
     }
 } 

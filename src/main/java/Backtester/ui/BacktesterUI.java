@@ -5,8 +5,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
-import javafx.scene.Scene;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 public class BacktesterUI {
 
@@ -29,7 +30,7 @@ public class BacktesterUI {
         VBox strategySection = createStrategySection();
         
         // 3. Chart Section (placeholder)
-        VBox chartSection = createChartSection();
+//        VBox chartSection = createChartSection();
         
         // 4. Performance Metrics Section
         VBox performanceSection = createPerformanceSection();
@@ -41,7 +42,7 @@ public class BacktesterUI {
         mainLayout.getChildren().addAll(
             inputSection,
             strategySection,
-            chartSection,
+//            chartSection,
             performanceSection,
             tradeHistorySection
         );
@@ -177,31 +178,31 @@ public class BacktesterUI {
         return section;
     }
 
-    private VBox createChartSection() {
-        VBox section = new VBox(10);
-        section.setPadding(new Insets(10));
-        section.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
-        
-        Label title = new Label("Price Chart & Strategy Performance");
-        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333;");
-        
-        // Placeholder for chart
-        VBox chartContainer = new VBox();
-        chartContainer.setPrefHeight(300);
-        chartContainer.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dee2e6; -fx-border-style: dashed;");
-        chartContainer.setAlignment(Pos.CENTER);
-        
-        Label placeholderLabel = new Label("Chart will be displayed here");
-        placeholderLabel.setStyle("-fx-text-fill: #6c757d; -fx-font-size: 14px;");
-        
-        chartContainer.getChildren().add(placeholderLabel);
-        
-        // Connect to controller
-        controller.chartContainer = chartContainer;
-        
-        section.getChildren().addAll(title, chartContainer);
-        return section;
-    }
+//    private VBox createChartSection() {
+//        VBox section = new VBox(10);
+//        section.setPadding(new Insets(10));
+//        section.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
+//
+//        Label title = new Label("Price Chart & Strategy Performance");
+//        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333;");
+//
+//        // Placeholder for chart
+//        VBox chartContainer = new VBox();
+//        chartContainer.setPrefHeight(300);
+//        chartContainer.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dee2e6; -fx-border-style: dashed;");
+//        chartContainer.setAlignment(Pos.CENTER);
+//
+//        Label placeholderLabel = new Label("Chart will be displayed here");
+//        placeholderLabel.setStyle("-fx-text-fill: #6c757d; -fx-font-size: 14px;");
+//
+//        chartContainer.getChildren().add(placeholderLabel);
+//
+//        // Connect to controller
+//        controller.chartContainer = chartContainer;
+//
+//        section.getChildren().addAll(title, chartContainer);
+//        return section;
+//    }
 
     private VBox createPerformanceSection() {
         VBox section = new VBox(10);
@@ -308,8 +309,20 @@ public class BacktesterUI {
         statusCol.setPrefWidth(100);
         statusCol.setCellValueFactory(data -> 
             new javafx.beans.property.SimpleStringProperty(data.getValue().isOpen() ? "Open" : "Closed"));
+
+        TableColumn<Trade, Double> pnlCol = new TableColumn<>("PnL");
+        pnlCol.setPrefWidth(100);
+        pnlCol.setCellValueFactory(data -> {
+            Trade trade = data.getValue();
+            if (trade.isOpen()) {
+                // For open trades, we'll need to get the current bar from the controller
+                return new javafx.beans.property.SimpleDoubleProperty(controller.openPnl(trade)).asObject(); // Placeholder
+            } else {
+                return new javafx.beans.property.SimpleDoubleProperty(trade.profit()).asObject();
+            }
+        });
         
-        tradeTable.getColumns().addAll(entryDateCol, entryPriceCol, exitDateCol, exitPriceCol, sideCol, quantityCol, statusCol);
+        tradeTable.getColumns().addAll(entryDateCol, entryPriceCol, exitDateCol, exitPriceCol, sideCol, quantityCol, statusCol, pnlCol);
         
         // Add placeholder
         tradeTable.setPlaceholder(new Label("No trades to display. Run a backtest to see results."));

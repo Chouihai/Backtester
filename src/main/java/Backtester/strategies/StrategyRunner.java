@@ -37,8 +37,8 @@ public class StrategyRunner {
     }
 
     public void run(String strategy, LocalDate startDate, LocalDate endDate) {
-        int initialIndex = barCache.findIndexByDate(startDate);
-        int endIndex = barCache.findIndexByDate(endDate);
+        int initialIndex = barCache.findIndexAfterDate(startDate);
+        int endIndex = barCache.findIndexBeforeDate(endDate);
         logger.info("About to start running strategy starting at index " + initialIndex + " and ending at index " + endIndex);
         initialize(strategy, initialIndex);
         int i = initialIndex + 1;
@@ -53,6 +53,8 @@ public class StrategyRunner {
      * Get all functions and value accumulators needed
      */
     public void initialize(String strategy, int startingIndex) {
+        positionManager.reset();
+        valueAccumulatorCache.reset();
         CompiledScript compiled = new Parser().parse(strategy);
         ScriptFunctionRegistry registry = scriptFunctionRegistryFactory.createRegistry(compiled.functionCalls());
         this.evaluator = new ScriptEvaluator(compiled, registry, valueAccumulatorCache);

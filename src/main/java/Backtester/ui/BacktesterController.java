@@ -237,50 +237,8 @@ public class BacktesterController {
         updateChart();
     }
 
-    private double calculateTotalReturn(List<Trade> trades, double initialCapital) {
-        if (trades.isEmpty()) return 0.0;
-
-        double finalValue = initialCapital;
-        for (Trade trade : trades) {
-            if (trade.getDirection() == Trade.TradeDirection.LONG) {
-                finalValue -= trade.getQuantity() * trade.entry.open;
-            } else {
-                finalValue += trade.getQuantity() * trade.entry.open;
-            }
-        }
-
-        return (finalValue - initialCapital) / initialCapital;
-    }
-
-
-
-    // TODO: this should be done by PositionManager not this
-    private double calculateSharpeRatio(List<Trade> trades, List<Bar> bars) {
-        // Simplified Sharpe ratio calculation
-        if (trades.isEmpty() || bars.size() < 2) return 0.0;
-        
-        // Calculate daily returns
-        double[] returns = new double[bars.size() - 1];
-        for (int i = 1; i < bars.size(); i++) {
-            returns[i - 1] = (bars.get(i).close - bars.get(i - 1).close) / bars.get(i - 1).close;
-        }
-        
-        // Calculate mean and standard deviation
-        double sum = 0.0;
-        for (double ret : returns) {
-            sum += ret;
-        }
-        double mean = sum / returns.length;
-        
-        double variance = 0.0;
-        for (double ret : returns) {
-            variance += Math.pow(ret - mean, 2);
-        }
-        variance /= returns.length;
-        double stdDev = Math.sqrt(variance);
-        
-        // Annualized Sharpe ratio (assuming daily data)
-        return stdDev == 0 ? 0 : (mean * 252) / (stdDev * Math.sqrt(252));
+    public double openPnl(Trade trade) {
+        return positionManager.openPnl(trade);
     }
 
     private void updateChart() {
