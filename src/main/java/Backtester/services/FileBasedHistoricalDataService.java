@@ -3,6 +3,7 @@ package Backtester.services;
 import Backtester.caches.BarCache;
 import Backtester.objects.Bar;
 import com.google.inject.Inject;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +14,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -39,30 +42,25 @@ public class FileBasedHistoricalDataService implements HistoricalDataService {
 
     private List<Bar> loadDataFromFile(String symbol) {
         try {
-            // Load the JSON file from resources
             String jsonContent = loadJsonFile();
             JSONObject response = new JSONObject(jsonContent);
 
-            // The file contains the time series data directly
-            JSONObject timeSeries = response;
+            List<Bar> bars = new ArrayList<>();
+            
+            // Check if the JSON has a "results" array (like the test data)
+            if (response.has("results") && response.get("results") instanceof JSONArray) {
+                bars = parseResultsArray(response.getJSONArray("results"));
+            } else {
+                // Assume the root object contains date keys with OHLCV data
+                bars = parseDateKeyFormat(response);
+            }
 
-            if (timeSeries.length() == 0) {
+            if (bars.isEmpty()) {
                 throw new RuntimeException("No data available for " + symbol);
             }
 
-            // Parse and create Bar objects
-            List<Bar> bars = new ArrayList<>();
-            List<String> dates = new ArrayList<>(timeSeries.keySet());
-            dates.sort(Comparator.comparing(date -> LocalDate.parse(date, DateTimeFormatter.ISO_DATE)));
-            int index = 0;
-
-            for (String dateStr: dates) {
-                JSONObject dailyData = timeSeries.getJSONObject(dateStr);
-                LocalDate barDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_DATE);
-                Bar bar = parseBarFromJson(index, barDate, dailyData);
-                bars.add(bar);
-                index++;
-            }
+            // Sort bars by date
+            bars.sort(Comparator.comparing(bar -> bar.date));
 
             // Load data into cache
             barCache.loadCache(bars);
@@ -77,6 +75,50 @@ public class FileBasedHistoricalDataService implements HistoricalDataService {
             logger.error("Error loading historical data for {} from file: {}",
                     symbol, e.getMessage(), e);
             throw new RuntimeException("Failed to load historical data from file: " + e.getMessage(), e);
+        }
+    }
+
+    private List<Bar> parseResultsArray(JSONArray results) {
+        List<Bar> bars = new ArrayList<>();
+        for (int i = 0; i < results.length(); i++) {
+            JSONObject data = results.getJSONObject(i);
+            LocalDate date = parseTimestamp(data);
+            Bar bar = parseBarFromJson(i, date, data);
+            bars.add(bar);
+        }
+        return bars;
+    }
+
+    private List<Bar> parseDateKeyFormat(JSONObject timeSeries) {
+        List<Bar> bars = new ArrayList<>();
+        List<String> dates = new ArrayList<>(timeSeries.keySet());
+        dates.sort(Comparator.comparing(date -> LocalDate.parse(date, DateTimeFormatter.ISO_DATE)));
+        
+        for (int i = 0; i < dates.size(); i++) {
+            String dateStr = dates.get(i);
+            JSONObject dailyData = timeSeries.getJSONObject(dateStr);
+            LocalDate barDate = LocalDate.parse(dateStr, DateTimeFormatter.ISO_DATE);
+            Bar bar = parseBarFromJson(i, barDate, dailyData);
+            bars.add(bar);
+        }
+        return bars;
+    }
+
+    private LocalDate parseTimestamp(JSONObject data) {
+        if (data.has("t")) {
+            // Unix timestamp in milliseconds
+            long timestamp = data.getLong("t");
+            return Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate();
+        } else if (data.has("timestamp")) {
+            // Unix timestamp in milliseconds
+            long timestamp = data.getLong("timestamp");
+            return Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate();
+        } else if (data.has("date")) {
+            // ISO date string
+            String dateStr = data.getString("date");
+            return LocalDate.parse(dateStr, DateTimeFormatter.ISO_DATE);
+        } else {
+            throw new RuntimeException("No timestamp field found in data: " + data.toString());
         }
     }
 
@@ -104,12 +146,74 @@ public class FileBasedHistoricalDataService implements HistoricalDataService {
     }
 
     private Bar parseBarFromJson(int index, LocalDate date, JSONObject dailyData) {
-        double open = Double.parseDouble(dailyData.getString("1. open"));
-        double high = Double.parseDouble(dailyData.getString("2. high"));
-        double low = Double.parseDouble(dailyData.getString("3. low"));
-        double close = Double.parseDouble(dailyData.getString("4. close"));
-        long volume = Long.parseLong(dailyData.getString("5. volume"));
+        double open = findDoubleValue(dailyData, "open", "o");
+        double high = findDoubleValue(dailyData, "high", "h");
+        double low = findDoubleValue(dailyData, "low", "l");
+        double close = findDoubleValue(dailyData, "close", "c");
+        long volume = findLongValue(dailyData, "volume", "v");
 
         return new Bar(index, date, open, high, low, close, volume);
+    }
+
+    private double findDoubleValue(JSONObject data, String... fieldNames) {
+        // First try exact matches
+        for (String fieldName : fieldNames) {
+            if (data.has(fieldName)) {
+                Object value = data.get(fieldName);
+                if (value instanceof Number) {
+                    return ((Number) value).doubleValue();
+                } else if (value instanceof String) {
+                    return Double.parseDouble((String) value);
+                }
+            }
+        }
+        
+        // Then try partial matches
+        for (String fieldName : fieldNames) {
+            for (String key : data.keySet()) {
+                if (key.toLowerCase().contains(fieldName.toLowerCase()) || 
+                    key.toLowerCase().startsWith(fieldName.toLowerCase())) {
+                    Object value = data.get(key);
+                    if (value instanceof Number) {
+                        return ((Number) value).doubleValue();
+                    } else if (value instanceof String) {
+                        return Double.parseDouble((String) value);
+                    }
+                }
+            }
+        }
+        
+        throw new RuntimeException("No valid field found. Tried: " + String.join(", ", fieldNames));
+    }
+
+    private long findLongValue(JSONObject data, String... fieldNames) {
+        // First try exact matches
+        for (String fieldName : fieldNames) {
+            if (data.has(fieldName)) {
+                Object value = data.get(fieldName);
+                if (value instanceof Number) {
+                    return ((Number) value).longValue();
+                } else if (value instanceof String) {
+                    return Long.parseLong((String) value);
+                }
+            }
+        }
+        
+        // Then try partial matches
+        for (String fieldName : fieldNames) {
+            for (String key : data.keySet()) {
+                if (key.toLowerCase().contains(fieldName.toLowerCase()) || 
+                    key.toLowerCase().startsWith(fieldName.toLowerCase())) {
+                    Object value = data.get(key);
+                    if (value instanceof Number) {
+                        return ((Number) value).longValue();
+                    } else if (value instanceof String) {
+                        return Long.parseLong((String) value);
+                    }
+                }
+            }
+        }
+        
+        throw new RuntimeException("No valid field found. Tried: " + String.join(", ", fieldNames));
     }
 } 
