@@ -19,26 +19,6 @@ This application provides a graphical interface for backtesting stock trading st
 - **IntelliJ IDEA** (recommended) or any Java IDE
 - **Alpha Vantage API Key** (optional, for live data)
 
-## Project Structure
-
-```
-Backtester/
-├── src/
-│   ├── main/
-│   │   ├── java/Backtester/
-│   │   │   ├── ui/                    # JavaFX UI components
-│   │   │   ├── script/                # Custom scripting language
-│   │   │   ├── strategies/            # Strategy execution engine
-│   │   │   ├── services/              # Data and business services
-│   │   │   ├── caches/                # Data caching layer
-│   │   │   └── objects/               # Domain objects
-│   │   └── resources/
-│   │       ├── AAPL.json             # Sample stock data
-│   │       └── application.properties # Configuration
-│   └── test/                          # Unit tests
-└── pom.xml                           # Maven configuration
-```
-
 ## Setup and Installation
 
 ### 1. Clone the Repository and Configure the Application
@@ -96,30 +76,18 @@ mvn javafx:run
 
 ## Scripting Language
 
-The application uses a custom scripting language with Python-like syntax for writing trading strategies.
+The application uses a custom scripting language with Python syntax for writing trading strategies.
 
 ### Basic Syntax
 
-#### Variables
 ```python
-# Variable assignment
+// variable assignment
 sma20 = sma(20)
-sma50 = sma(50)
-```
 
-#### Conditional Statements
-```python
-# Simple if statement
-if (close > open)
+// conditional statements
+if close() > open():
     createOrder("Long", true, 100)
-
-# Multi-line if statement
-if (sma20 > sma50)
-    createOrder("Long", true, 1000)
-    closeOrder("position1")
-
-# If statement with function calls
-if (crossover(sma20, sma50))
+else crossover(sma20, sma50):
     createOrder("Golden Cross Long", true, 1000)
 ```
 
@@ -128,13 +96,13 @@ if (crossover(sma20, sma50))
 #### `sma(days)`
 Calculates Simple Moving Average over the specified number of days.
 - **Arguments**: 1 (number of days)
-- **Returns**: ValueAccumulator object
+- **Returns**: ValueAccumulator
 - **Example**: `sma20 = sma(20)`
 
 #### `crossover(value1, value2)`
 Detects when the first value crosses above the second value.
-- **Arguments**: 2 (two ValueAccumulator objects)
-- **Returns**: Boolean ValueAccumulator
+- **Arguments**: 2 (two ValueAccumulators)
+- **Returns**: Boolean ValueAccumulator (evaluates to the most recent value)
 - **Example**: `crossover(sma20, sma50)`
 
 #### `createOrder(name, isBuy, quantity)`
@@ -159,10 +127,10 @@ Creates a new trading order.
 sma20 = sma(20)
 sma50 = sma(50)
 
-if (crossover(sma20, sma50))
+if crossover(sma20, sma50):
     createOrder("Golden Cross Long", true, 1000)
 
-if (crossover(sma50, sma20))
+if :crossover(sma50, sma20):
     createOrder("Death Cross Short", false, 1000)
 ```
 

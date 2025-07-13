@@ -7,7 +7,10 @@ import Backtester.script.statements.Statement;
 import Backtester.script.statements.VariableDeclaration;
 import Backtester.script.statements.expressions.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class Parser {
 
@@ -56,18 +59,41 @@ public class Parser {
     }
 
     private Statement parseIfStatement() {
-        Expression condition = parseExpression();
-        consume(TokenType.NEWLINE, "Expected newline after if condition.");
-        consume(TokenType.INDENT, "Expected indent after if condition.");
+        List<IfStatement.IfBranch> branches = new ArrayList<>();
 
+        Expression condition = parseExpression();
+        List<Statement> body = parseIndentedBlock();
+        branches.add(new IfStatement.IfBranch(condition, body));
+
+        while (!isAtEnd() && (check(TokenType.ELIF) || check(TokenType.ELSE))) {
+            if (match(TokenType.ELIF)) {
+                Expression elifCondition = parseExpression();
+                List<Statement> elifBody = parseIndentedBlock();
+                branches.add(new IfStatement.IfBranch(elifCondition, elifBody));
+            } else if (match(TokenType.ELSE)) {
+                List<Statement> elseBody = parseIndentedBlock();
+                branches.add(new IfStatement.IfBranch(null, elseBody));
+                break;
+            }
+        }
+
+        return new IfStatement(branches);
+    }
+
+    private List<Statement> parseIndentedBlock() {
         List<Statement> body = new ArrayList<>();
+
+        consume(TokenType.COLON, "Expected ':' after else.");
+        consume(TokenType.NEWLINE, "Expected newline after else.");
+        consume(TokenType.INDENT, "Expected indent after else.");
 
         while (!(isAtEnd() || check(TokenType.DEDENT))) {
             body.add(parseStatement());
-            if (!isAtEnd()) consume(TokenType.NEWLINE, "Expected newline between if body statements.");
+            if (!isAtEnd()) consume(TokenType.NEWLINE, "Expected newline between statements.");
         }
-        if (!isAtEnd()) consume(TokenType.DEDENT, "Expected dedent after if statement.");
-        return new IfStatement(condition, body);
+
+        if (!isAtEnd()) consume(TokenType.DEDENT, "Expected dedent after block.");
+        return body;
     }
 
     private Expression parseExpression() {

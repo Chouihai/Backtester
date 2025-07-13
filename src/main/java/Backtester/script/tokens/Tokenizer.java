@@ -16,6 +16,8 @@ public class Tokenizer {
 //        keywords.put("entry", TokenType.ENTRY);
 //        keywords.put("close", TokenType.CLOSE);
         keywords.put("if", TokenType.IF);
+        keywords.put("elif", TokenType.ELIF);
+        keywords.put("else", TokenType.ELSE);
         keywords.put("true", TokenType.TRUE);
         keywords.put("false", TokenType.FALSE);
         keywords.put("when", TokenType.WHEN);
@@ -53,6 +55,7 @@ public class Tokenizer {
                 addToken(match('=') ? TokenType.BANG_EQUAL : TokenType.BANG); break;
             case '>':
                 addToken(match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
+            case ':': addToken(TokenType.COLON); break;
             case '<':
                 addToken(match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
             case '\n':

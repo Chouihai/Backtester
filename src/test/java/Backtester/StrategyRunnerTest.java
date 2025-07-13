@@ -79,9 +79,9 @@ public class StrategyRunnerTest {
                 sma20 = sma(20)
                 sma50 = sma(50)
                 
-                if (sma20 > sma50)
+                if sma20 > sma50:
                     createOrder("long", true, 10)
-                if (sma50 > sma20)
+                if sma50 > sma20:
                     createOrder("position1", false, 10)
                 """;
 
@@ -114,9 +114,9 @@ public class StrategyRunnerTest {
                 sma20 = sma(20)
                 sma50 = sma(50)
                 
-                if (crossover(sma20, sma50))
+                if crossover(sma20, sma50):
                     createOrder("long", true, 10)
-                if (crossover(sma50, sma20))
+                if crossover(sma50, sma20):
                     createOrder("position1", false, 10)
                 """;
 
@@ -169,9 +169,9 @@ public class StrategyRunnerTest {
                 sma20 = sma(20)
                 sma50 = sma(50)
 
-                if (crossover(sma20, sma50))
+                if crossover(sma20, sma50):
                     createOrder("long", true, 1000)
-                if (crossover(sma50, sma20))
+                if crossover(sma50, sma20):
                     createOrder("position1", false, 1000)
                 """;
 
@@ -217,9 +217,9 @@ public class StrategyRunnerTest {
                 sma20 = sma(20)
                 sma50 = sma(50)
 
-                if (crossover(sma20, sma50))
+                if crossover(sma20, sma50):
                     createOrder("long", true, 1000)
-                if (crossover(sma50, sma20))
+                if crossover(sma50, sma20):
                     createOrder("position1", false, 500)
                 """;
 
@@ -252,10 +252,10 @@ public class StrategyRunnerTest {
                 sma20 = sma(20)
                 sma50 = sma(50)
 
-                if (crossover(sma20, sma50))
+                if crossover(sma20, sma50):
                     createOrder("long", true, 500)
                     createOrder("long2", true, 500)
-                if (crossover(sma50, sma20))
+                if crossover(sma50, sma20):
                     createOrder("position1", false, 1000)
                 """;
 
@@ -301,10 +301,10 @@ public class StrategyRunnerTest {
                 sma20 = sma(20)
                 sma50 = sma(50)
 
-                if (crossover(sma20, sma50))
+                if crossover(sma20, sma50):
                     createOrder("A", true, 600)
                     createOrder("B", true, 500)
-                if (crossover(sma50, sma20))
+                if crossover(sma50, sma20):
                     createOrder("position1", false, 500)
                 """;
 

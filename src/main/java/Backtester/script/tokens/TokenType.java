@@ -2,7 +2,7 @@ package Backtester.script.tokens;
 
 public enum TokenType {
     // Keywords
-    STRATEGY, ENTRY, CLOSE, IF, TRUE, FALSE, WHEN,
+    STRATEGY, ENTRY, CLOSE, IF, ELIF, ELSE, TRUE, FALSE, WHEN,
 
     // Identifiers and literals
     IDENTIFIER, INTEGER, DOUBLE, STRING,

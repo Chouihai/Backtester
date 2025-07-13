@@ -102,7 +102,7 @@ public class ParserTest {
     @Test
     public void testIfStatementWithOneLine() {
         List<Statement> stmts = parse("""
-            if close > open
+            if close > open:
                 createOrder("Long", true, 100)
             """);
 
@@ -110,15 +110,17 @@ public class ParserTest {
         assertInstanceOf(IfStatement.class, stmts.get(0));
         IfStatement ifStmt = (IfStatement) stmts.get(0);
 
-        assertInstanceOf(BinaryExpression.class, ifStmt.condition);
-        assertEquals(1, ifStmt.body.size());
-        assertInstanceOf(ExpressionStatement.class, ifStmt.body.get(0));
+        assertEquals(1, ifStmt.branches.size());
+        IfStatement.IfBranch branch = ifStmt.branches.get(0);
+        assertInstanceOf(BinaryExpression.class, branch.condition);
+        assertEquals(1, branch.body.size());
+        assertInstanceOf(ExpressionStatement.class, branch.body.get(0));
     }
 
     @Test
     public void testIfStatementWithMultipleLines() {
         List<Statement> stmts = parse("""
-            if close > open
+            if close > open:
                 x = 1
                 y = 2.0
             """);
@@ -126,9 +128,11 @@ public class ParserTest {
         assertEquals(1, stmts.size());
         IfStatement ifStmt = (IfStatement) stmts.get(0);
 
-        assertEquals(2, ifStmt.body.size());
-        assertInstanceOf(VariableDeclaration.class, ifStmt.body.get(0));
-        assertInstanceOf(VariableDeclaration.class, ifStmt.body.get(1));
+        assertEquals(1, ifStmt.branches.size());
+        IfStatement.IfBranch branch = ifStmt.branches.get(0);
+        assertEquals(2, branch.body.size());
+        assertInstanceOf(VariableDeclaration.class, branch.body.get(0));
+        assertInstanceOf(VariableDeclaration.class, branch.body.get(1));
     }
 
     @Test
@@ -137,9 +141,9 @@ public class ParserTest {
                 sma20 = sma(20)
                 sma50 = sma(50)
                 
-                if (crossover(sma20, sma50))
+                if crossover(sma20, sma50):
                     createOrder("long", true, 1000)
-                if (crossover(sma50, sma20))
+                if crossover(sma50, sma20):
                     createOrder("position1", false, 1000)""");
 
         assertEquals(4, stmts.size());
@@ -153,14 +157,18 @@ public class ParserTest {
 
         IfStatement ifStatement1 = (IfStatement) stmts.get(2);
 
-        assertTrue(ifStatement1.condition.isFunctionCall());
-        assertEquals(1, ifStatement1.body.size());
-        ExpressionStatement exprStmt = (ExpressionStatement) ifStatement1.body.get(0);
+        assertEquals(1, ifStatement1.branches.size());
+        IfStatement.IfBranch branch1 = ifStatement1.branches.get(0);
+        assertTrue(branch1.condition.isFunctionCall());
+        assertEquals(1, branch1.body.size());
+        ExpressionStatement exprStmt = (ExpressionStatement) branch1.body.get(0);
         assertTrue(exprStmt.expression.isFunctionCall());
 
         IfStatement ifStatement2 = (IfStatement) stmts.get(3);
-        assertTrue(ifStatement2.condition.isFunctionCall());
-        ExpressionStatement exprStmt3 = (ExpressionStatement) ifStatement1.body.get(0);
+        assertEquals(1, ifStatement2.branches.size());
+        IfStatement.IfBranch branch2 = ifStatement2.branches.get(0);
+        assertTrue(branch2.condition.isFunctionCall());
+        ExpressionStatement exprStmt3 = (ExpressionStatement) branch2.body.get(0);
         assertTrue(exprStmt3.expression.isFunctionCall());
     }
 
@@ -171,10 +179,10 @@ public class ParserTest {
                 sma20 = sma(20)
                 sma50 = sma(50)
                 
-                if (sma20 > sma50)
+                if sma20 > sma50:
                     createOrder("long", true, 10)
                     closeOrder("position1")
-                if (sma50 > sma20)
+                if sma50 > sma20:
                     createOrder("position1", false, 10)
                 """);
 
@@ -189,16 +197,20 @@ public class ParserTest {
 
         IfStatement ifStatement1 = (IfStatement) stmts.get(2);
 
-        assertTrue(ifStatement1.condition.isBinary());
-        assertEquals(2, ifStatement1.body.size());
-        ExpressionStatement exprStmt = (ExpressionStatement) ifStatement1.body.get(0);
-        ExpressionStatement exprStmt2 = (ExpressionStatement) ifStatement1.body.get(1);
+        assertEquals(1, ifStatement1.branches.size());
+        IfStatement.IfBranch branch1 = ifStatement1.branches.get(0);
+        assertTrue(branch1.condition.isBinary());
+        assertEquals(2, branch1.body.size());
+        ExpressionStatement exprStmt = (ExpressionStatement) branch1.body.get(0);
+        ExpressionStatement exprStmt2 = (ExpressionStatement) branch1.body.get(1);
         assertTrue(exprStmt.expression.isFunctionCall());
         assertTrue(exprStmt2.expression.isFunctionCall());
 
         IfStatement ifStatement2 = (IfStatement) stmts.get(3);
-        assertTrue(ifStatement2.condition.isBinary());
-        ExpressionStatement exprStmt3 = (ExpressionStatement) ifStatement1.body.get(0);
+        assertEquals(1, ifStatement2.branches.size());
+        IfStatement.IfBranch branch2 = ifStatement2.branches.get(0);
+        assertTrue(branch2.condition.isBinary());
+        ExpressionStatement exprStmt3 = (ExpressionStatement) branch2.body.get(0);
         assertTrue(exprStmt3.expression.isFunctionCall());
     }
 
@@ -208,9 +220,9 @@ public class ParserTest {
                 sma20 = sma(20)
                 sma50 = sma(50)
                 
-                if (crossover(sma20, sma50))
+                if crossover(sma20, sma50):
                     createOrder("long", true, 10)
-                if (crossover(sma50, sma20))
+                if crossover(sma50, sma20):
                     createOrder("position1", false, 10)
                 """);
 
@@ -225,15 +237,103 @@ public class ParserTest {
 
         IfStatement ifStatement1 = (IfStatement) stmts.get(2);
 
-        assertTrue(ifStatement1.condition.isFunctionCall());
-        assertEquals(1, ifStatement1.body.size());
-        ExpressionStatement exprStmt = (ExpressionStatement) ifStatement1.body.get(0);
+        assertEquals(1, ifStatement1.branches.size());
+        IfStatement.IfBranch branch1 = ifStatement1.branches.get(0);
+        assertTrue(branch1.condition.isFunctionCall());
+        assertEquals(1, branch1.body.size());
+        ExpressionStatement exprStmt = (ExpressionStatement) branch1.body.get(0);
         assertTrue(exprStmt.expression.isFunctionCall());
 
         IfStatement ifStatement2 = (IfStatement) stmts.get(3);
-        assertTrue(ifStatement2.condition.isFunctionCall());
-        ExpressionStatement exprStmt3 = (ExpressionStatement) ifStatement2.body.get(0);
+        assertEquals(1, ifStatement2.branches.size());
+        IfStatement.IfBranch branch2 = ifStatement2.branches.get(0);
+        assertTrue(branch2.condition.isFunctionCall());
+        ExpressionStatement exprStmt3 = (ExpressionStatement) branch2.body.get(0);
         assertTrue(exprStmt3.expression.isFunctionCall());
+    }
+
+    @Test
+    public void testIfElifElseStatement() {
+        List<Statement> stmts = parse("""
+            if close > open:
+                createOrder("Long", true, 100)
+            elif close < open:
+                createOrder("Short", false, 100)
+            else:
+                createOrder("Hold", true, 0)
+            """);
+
+        assertEquals(1, stmts.size());
+        assertInstanceOf(IfStatement.class, stmts.get(0));
+        IfStatement ifStmt = (IfStatement) stmts.get(0);
+
+        assertEquals(3, ifStmt.branches.size());
+
+        IfStatement.IfBranch ifBranch = ifStmt.branches.get(0);
+        assertInstanceOf(BinaryExpression.class, ifBranch.condition);
+        assertEquals(1, ifBranch.body.size());
+        assertInstanceOf(ExpressionStatement.class, ifBranch.body.get(0));
+
+        IfStatement.IfBranch elifBranch = ifStmt.branches.get(1);
+        assertInstanceOf(BinaryExpression.class, elifBranch.condition);
+        assertEquals(1, elifBranch.body.size());
+        assertInstanceOf(ExpressionStatement.class, elifBranch.body.get(0));
+
+        IfStatement.IfBranch elseBranch = ifStmt.branches.get(2);
+        assertNull(elseBranch.condition); // else has no condition
+        assertTrue(elseBranch.isElse());
+        assertEquals(1, elseBranch.body.size());
+        assertInstanceOf(ExpressionStatement.class, elseBranch.body.get(0));
+    }
+
+    @Test
+    public void testIfElifStatement() {
+        List<Statement> stmts = parse("""
+            if sma20 > sma50:
+                createOrder("Long", true, 100)
+            elif sma50 > sma20:
+                createOrder("Short", false, 100)
+            """);
+
+        assertEquals(1, stmts.size());
+        assertInstanceOf(IfStatement.class, stmts.get(0));
+        IfStatement ifStmt = (IfStatement) stmts.get(0);
+
+        assertEquals(2, ifStmt.branches.size());
+
+        IfStatement.IfBranch ifBranch = ifStmt.branches.get(0);
+        assertInstanceOf(BinaryExpression.class, ifBranch.condition);
+        assertEquals(1, ifBranch.body.size());
+
+        IfStatement.IfBranch elifBranch = ifStmt.branches.get(1);
+        assertInstanceOf(BinaryExpression.class, elifBranch.condition);
+        assertEquals(1, elifBranch.body.size());
+        assertFalse(elifBranch.isElse());
+    }
+
+    @Test
+    public void testIfElseStatement() {
+        List<Statement> stmts = parse("""
+            if crossover(sma20, sma50):
+                createOrder("Long", true, 100)
+            else:
+                createOrder("Short", false, 100)
+            """);
+
+        assertEquals(1, stmts.size());
+        assertInstanceOf(IfStatement.class, stmts.get(0));
+        IfStatement ifStmt = (IfStatement) stmts.get(0);
+
+        assertEquals(2, ifStmt.branches.size());
+
+        IfStatement.IfBranch ifBranch = ifStmt.branches.get(0);
+        assertInstanceOf(FunctionCall.class, ifBranch.condition);
+        assertEquals(1, ifBranch.body.size());
+
+        IfStatement.IfBranch elseBranch = ifStmt.branches.get(1);
+        assertNull(elseBranch.condition);
+        assertTrue(elseBranch.isElse());
+        assertEquals(1, elseBranch.body.size());
     }
 
     @Test

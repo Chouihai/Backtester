@@ -3,16 +3,23 @@ package Backtester.script;
 import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.CompiledScript;
 import Backtester.objects.valueaccumulator.ValueAccumulator;
-import Backtester.script.functions.*;
+import Backtester.script.functions.ScriptFunction;
+import Backtester.script.functions.ScriptFunctionRegistry;
 import Backtester.script.functions.result.NonVoidScriptFunctionResult;
 import Backtester.script.functions.result.ScriptFunctionResult;
 import Backtester.script.functions.result.VoidScriptFunctionResult;
-import Backtester.script.statements.*;
+import Backtester.script.statements.ExpressionStatement;
+import Backtester.script.statements.IfStatement;
+import Backtester.script.statements.Statement;
+import Backtester.script.statements.VariableDeclaration;
 import Backtester.script.statements.expressions.*;
 import Backtester.script.tokens.Parser;
 import Backtester.script.tokens.TokenType;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class ScriptEvaluator {
 
@@ -44,10 +51,12 @@ public class ScriptEvaluator {
         switch (stmt) {
             case ExpressionStatement expressionStatement -> evaluate(expressionStatement.expression);
             case IfStatement ifStmt -> {
-                Object condition = evaluate(ifStmt.condition);
-                if (isTruthy(condition)) {
-                    for (Statement bodyStmt : ifStmt.body) {
-                        evaluate(bodyStmt);
+                for (IfStatement.IfBranch branch : ifStmt.branches) {
+                    if (branch.isElse() || isTruthy(evaluate(branch.condition))) {
+                        for (Statement bodyStmt : branch.body) {
+                            evaluate(bodyStmt);
+                        }
+                        break;
                     }
                 }
             }
