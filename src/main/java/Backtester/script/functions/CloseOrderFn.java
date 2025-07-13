@@ -3,6 +3,7 @@ package Backtester.script.functions;
 import Backtester.caches.OrderCache;
 import Backtester.script.EvaluationContext;
 import Backtester.script.functions.result.ScriptFunctionResult;
+import Backtester.script.statements.expressions.FunctionSignatureProperties;
 
 import java.util.List;
 
@@ -19,6 +20,10 @@ public class CloseOrderFn implements ScriptFunction {
 
     public CloseOrderFn(OrderCache orderCache) {
         this.orderCache = orderCache;
+    }
+
+    public static FunctionSignatureProperties getSignatureProperties() {
+        return new FunctionSignatureProperties(EXPECTED_ARGUMENTS, EXPECTED_ARGUMENTS);
     }
 
     public ScriptFunctionResult execute(List<Object> args, EvaluationContext context) {

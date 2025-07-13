@@ -111,6 +111,48 @@ Creates a new trading order.
 - **Returns**: void
 - **Example**: `createOrder("Long", true, 1000)`
 
+#### `close([lookback])`
+Accesses the close price from bars.
+- **Arguments**: 0-1 (optional lookback period)
+- **Returns**: ValueAccumulator object
+- **Lookback**: 0 = current bar (default), 1 = 1 bar back, etc.
+- **Examples**:
+    - `close()` - current bar's close price
+    - `close(1)` - previous bar's close price
+    - `close(5)` - close price from 5 bars ago
+
+#### `open([lookback])`
+Accesses the open price from bars.
+- **Arguments**: 0-1 (optional lookback period)
+- **Returns**: ValueAccumulator object
+- **Examples**:
+    - `open()` - current bar's open price
+    - `open(1)` - previous bar's open price
+
+#### `high([lookback])`
+Accesses the high price from bars.
+- **Arguments**: 0-1 (optional lookback period)
+- **Returns**: ValueAccumulator object
+- **Examples**:
+    - `high()` - current bar's high price
+    - `high(1)` - previous bar's high price
+
+#### `low([lookback])`
+Accesses the low price from bars.
+- **Arguments**: 0-1 (optional lookback period)
+- **Returns**: ValueAccumulator object
+- **Examples**:
+    - `low()` - current bar's low price
+    - `low(1)` - previous bar's low price
+
+#### `volume([lookback])`
+Accesses the volume from bars.
+- **Arguments**: 0-1 (optional lookback period)
+- **Returns**: ValueAccumulator object
+- **Examples**:
+    - `volume()` - current bar's volume
+    - `volume(1)` - previous bar's volume
+
 [//]: # (#### `closeOrder&#40;orderId&#41;`)
 
 [//]: # (Closes an existing order.)

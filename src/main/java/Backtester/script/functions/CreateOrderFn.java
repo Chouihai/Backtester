@@ -8,9 +8,9 @@ import Backtester.objects.order.OrderType;
 import Backtester.script.EvaluationContext;
 import Backtester.script.functions.result.ScriptFunctionResult;
 import Backtester.script.functions.result.VoidScriptFunctionResult;
+import Backtester.script.statements.expressions.FunctionSignatureProperties;
 import org.slf4j.Logger;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -30,12 +30,15 @@ public class CreateOrderFn implements ScriptFunction {
         this.orderCache = orderCache;
     }
 
-    @Override
     public ScriptFunctionResult execute(List<Object> args, EvaluationContext context) {
         CreateOrderFnArguments arguments = validateArgs(args);
         Order newOrder = new Order(idGenerator.getAndIncrement(), symbol, OrderStatus.OPEN, arguments.side(), OrderType.Market, 0.0, 0.0, 0.0, arguments.quantity(), null, arguments.name());
         orderCache.addOrder(newOrder);
         return new VoidScriptFunctionResult();
+    }
+
+    public static FunctionSignatureProperties getSignatureProperties() {
+        return new FunctionSignatureProperties(EXPECTED_ARGUMENTS, EXPECTED_ARGUMENTS);
     }
 
     // TODO Later on add validation instead of throwing Exceptions.

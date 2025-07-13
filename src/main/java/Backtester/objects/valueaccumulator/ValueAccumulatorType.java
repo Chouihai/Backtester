@@ -4,4 +4,5 @@ public enum ValueAccumulatorType {
     SMA,
     EMA,
     Crossover,
+    OHLCV,
  }

@@ -1,9 +1,11 @@
 package Backtester.script.statements.expressions;
 
-import Backtester.script.functions.CreateOrderFn;
-import Backtester.script.functions.SmaFunction;
-import Backtester.script.functions.CrossoverFn;
 import Backtester.script.functions.CloseOrderFn;
+import Backtester.script.functions.CreateOrderFn;
+import Backtester.script.functions.CrossoverFn;
+import Backtester.script.functions.SmaFunction;
+import Backtester.script.functions.ohlcv.*;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,14 +14,19 @@ public class FunctionCall extends Expression {
     public final String functionName;
     public final List<Expression> arguments;
 
-    // Static map of function names to their expected argument counts
-    private static final Map<String, Integer> FUNCTION_SIGNATURES = new HashMap<>();
+    private static final Map<String, FunctionSignatureProperties> FUNCTION_SIGNATURES = new HashMap<>();
     
     static {
-        FUNCTION_SIGNATURES.put(CreateOrderFn.FUNCTION_NAME, CreateOrderFn.EXPECTED_ARGUMENTS);
-        FUNCTION_SIGNATURES.put(SmaFunction.FUNCTION_NAME, SmaFunction.EXPECTED_ARGUMENTS);
-        FUNCTION_SIGNATURES.put(CrossoverFn.FUNCTION_NAME, CrossoverFn.EXPECTED_ARGUMENTS);
-        FUNCTION_SIGNATURES.put(CloseOrderFn.FUNCTION_NAME, CloseOrderFn.EXPECTED_ARGUMENTS);
+        FUNCTION_SIGNATURES.put(CreateOrderFn.FUNCTION_NAME, CreateOrderFn.getSignatureProperties());
+        FUNCTION_SIGNATURES.put(SmaFunction.FUNCTION_NAME, SmaFunction.getSignatureProperties());
+        FUNCTION_SIGNATURES.put(CrossoverFn.FUNCTION_NAME, CrossoverFn.getSignatureProperties());
+        FUNCTION_SIGNATURES.put(CloseOrderFn.FUNCTION_NAME, CloseOrderFn.getSignatureProperties());
+        FUNCTION_SIGNATURES.put(CloseFunction.FUNCTION_NAME, CloseFunction.getSignatureProperties());
+        FUNCTION_SIGNATURES.put(OpenFunction.FUNCTION_NAME, OpenFunction.getSignatureProperties());
+        FUNCTION_SIGNATURES.put(HighFunction.FUNCTION_NAME, HighFunction.getSignatureProperties());
+        FUNCTION_SIGNATURES.put(LowFunction.FUNCTION_NAME, LowFunction.getSignatureProperties());
+        FUNCTION_SIGNATURES.put(VolumeFunction.FUNCTION_NAME, VolumeFunction.getSignatureProperties());
+
     }
 
     public FunctionCall(String functionName, List<Expression> arguments) {
@@ -32,10 +39,17 @@ public class FunctionCall extends Expression {
             throw new RuntimeException("Unknown function '" + functionName + "'");
         }
         
-        int expectedArgs = FUNCTION_SIGNATURES.get(functionName);
-        if (actualArgs != expectedArgs) {
-            throw new RuntimeException("Function '" + functionName + "' expects " + expectedArgs + 
-                                     " arguments but got " + actualArgs);
+        FunctionSignatureProperties signatureProperites = FUNCTION_SIGNATURES.get(functionName);
+        if (actualArgs < signatureProperites.minimumArguments() || actualArgs > signatureProperites.maximumArguments()) {
+            String message;
+            if (signatureProperites.maximumArguments() == signatureProperites.minimumArguments()) {
+                message = "Function '" + functionName + "' expects " + signatureProperites.minimumArguments() +
+                        " arguments but got " + actualArgs;
+            } else {
+                message = "Function '" + functionName + "' expects no less than " + signatureProperites.minimumArguments() +
+                        " arguments, and no more than " + signatureProperites.maximumArguments() + " but got " + actualArgs;
+            }
+            throw new RuntimeException(message);
         }
     }
 

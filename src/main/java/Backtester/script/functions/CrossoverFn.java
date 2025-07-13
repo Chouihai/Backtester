@@ -9,6 +9,7 @@ import Backtester.objects.valueaccumulator.key.ValueAccumulatorKeyBuilder;
 import Backtester.script.EvaluationContext;
 import Backtester.script.functions.result.NonVoidScriptFunctionResult;
 import Backtester.script.functions.result.ScriptFunctionResult;
+import Backtester.script.statements.expressions.FunctionSignatureProperties;
 import Backtester.script.statements.expressions.Literal;
 
 import java.util.List;
@@ -28,6 +29,10 @@ public class CrossoverFn implements ScriptFunction {
     public ScriptFunctionResult execute(List<Object> args, EvaluationContext context) {
         CrossoverFnArguments fnArgs = checkArgs(args);
         return new CrossoverFnResult(fnArgs.crossoverDetector());
+    }
+
+    public static FunctionSignatureProperties getSignatureProperties() {
+        return new FunctionSignatureProperties(EXPECTED_ARGUMENTS, EXPECTED_ARGUMENTS);
     }
 
     private CrossoverFnArguments checkArgs(List<Object> args) {

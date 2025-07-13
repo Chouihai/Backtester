@@ -1,14 +1,15 @@
 package Backtester.script.functions;
 
 import Backtester.caches.ValueAccumulatorCache;
+import Backtester.objects.valueaccumulator.SmaCalculator;
 import Backtester.objects.valueaccumulator.ValueAccumulatorFactory;
 import Backtester.objects.valueaccumulator.ValueAccumulatorType;
 import Backtester.objects.valueaccumulator.key.SmaKey;
 import Backtester.script.EvaluationContext;
 import Backtester.script.functions.result.NonVoidScriptFunctionResult;
 import Backtester.script.functions.result.ScriptFunctionResult;
+import Backtester.script.statements.expressions.FunctionSignatureProperties;
 import Backtester.script.statements.expressions.Literal;
-import Backtester.objects.valueaccumulator.SmaCalculator;
 
 import java.util.List;
 
@@ -38,6 +39,10 @@ public class SmaFunction implements ScriptFunction {
             cache.put(key, calculator);
         }
         return new SmaFunctionResult(calculator);
+    }
+
+    public static FunctionSignatureProperties getSignatureProperties() {
+        return new FunctionSignatureProperties(EXPECTED_ARGUMENTS, EXPECTED_ARGUMENTS);
     }
 
     private int getDays(List<Object> args) {
