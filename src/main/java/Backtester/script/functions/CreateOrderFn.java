@@ -19,8 +19,8 @@ public class CreateOrderFn implements ScriptFunction {
     private final Logger logger = null; // TODO: add logger later
     public static final String FUNCTION_NAME = "createOrder";
     public static final int EXPECTED_ARGUMENTS = 3; // name, isBuy, quantity
-    private final static int MINIMUM_ARGUMENTS_SIZE = 2; // Later on might want to have required vs optional args
-    private final static int MAXIMUM_ARGUMENTS_SIZE = 3; // Later on might want to have required vs optional args
+    private final static int MINIMUM_ARGUMENTS_SIZE = 3; // name, isBuy, quantity are required
+    private final static int MAXIMUM_ARGUMENTS_SIZE = 6; // name, isBuy, quantity, orderType, limitPrice, stopPrice
     private final OrderCache orderCache;
     private final String symbol = "AAPL"; // TODO Inject this later
     private final AtomicInteger idGenerator = new AtomicInteger(1); // Orders will exist entirely in memory
@@ -32,30 +32,66 @@ public class CreateOrderFn implements ScriptFunction {
 
     public ScriptFunctionResult execute(List<Object> args, EvaluationContext context) {
         CreateOrderFnArguments arguments = validateArgs(args);
-        Order newOrder = new Order(idGenerator.getAndIncrement(), symbol, OrderStatus.OPEN, arguments.side(), OrderType.Market, 0.0, 0.0, 0.0, arguments.quantity(), null, arguments.name());
+        Order newOrder = new Order(idGenerator.getAndIncrement(), symbol, OrderStatus.OPEN, arguments.side(), 
+                                 arguments.orderType(), arguments.limitPrice(), arguments.stopPrice(), 
+                                 0.0, arguments.quantity(), null, arguments.name());
         orderCache.addOrder(newOrder);
         return new VoidScriptFunctionResult();
     }
 
     public static FunctionSignatureProperties getSignatureProperties() {
-        return new FunctionSignatureProperties(EXPECTED_ARGUMENTS, EXPECTED_ARGUMENTS);
+        return new FunctionSignatureProperties(MINIMUM_ARGUMENTS_SIZE, MAXIMUM_ARGUMENTS_SIZE);
     }
 
     // TODO Later on add validation instead of throwing Exceptions.
     private CreateOrderFnArguments validateArgs(List<Object> args) {
         if (args.size() > MAXIMUM_ARGUMENTS_SIZE || args.size() < MINIMUM_ARGUMENTS_SIZE)
-            throw new IllegalArgumentException("Bad arguments size in EnterPosition");
+            throw new IllegalArgumentException("Bad arguments size in CreateOrderFn. Expected 3-6 arguments: name, isBuy, quantity, [orderType], [limitPrice], [stopPrice]");
+        
         Object nameArg = args.get(0);
         String name;
         if (nameArg == null) {
             name = "";
         } else name = nameArg.toString();
+        
         boolean isBuy = (Boolean) args.get(1);
         OrderSide side = (isBuy) ? OrderSide.BUY : OrderSide.SELL;
+        
         int quantity = Integer.parseInt(args.get(2).toString());
         if (quantity <= 0) throw new RuntimeException("Negative quantity in CreateOrderFn");
-        return new CreateOrderFnArguments(name, side, quantity);
+        
+        OrderType orderType = OrderType.Market;
+        double limitPrice = 0.0;
+        double stopPrice = 0.0;
+        
+        if (args.size() >= 4 && args.get(3) != null) {
+            String orderTypeStr = args.get(3).toString().toUpperCase();
+            try {
+                orderType = OrderType.valueOf(orderTypeStr);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid order type: " + orderTypeStr + ". Must be MARKET, LIMIT, or STOP");
+            }
+        }
+        
+        if (args.size() >= 5 && args.get(4) != null) {
+            limitPrice = Double.parseDouble(args.get(4).toString());
+            if (limitPrice < 0) throw new IllegalArgumentException("Limit price cannot be negative");
+        }
+        
+        if (args.size() >= 6 && args.get(5) != null) {
+            stopPrice = Double.parseDouble(args.get(5).toString());
+            if (stopPrice < 0) throw new IllegalArgumentException("Stop price cannot be negative");
+        }
+        
+        if (orderType == OrderType.Limit && limitPrice <= 0) {
+            throw new IllegalArgumentException("Limit orders require a positive limit price");
+        }
+        if (orderType == OrderType.Stop && stopPrice <= 0) {
+            throw new IllegalArgumentException("Stop orders require a positive stop price");
+        }
+        
+        return new CreateOrderFnArguments(name, side, quantity, orderType, limitPrice, stopPrice);
     }
 }
 
-record CreateOrderFnArguments(String name, OrderSide side, int quantity) {}
+record CreateOrderFnArguments(String name, OrderSide side, int quantity, OrderType orderType, double limitPrice, double stopPrice) {}

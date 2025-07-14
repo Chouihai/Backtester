@@ -5,6 +5,7 @@ import Backtester.objects.Bar;
 import Backtester.objects.Position;
 import Backtester.objects.Trade;
 import Backtester.objects.order.Order;
+import Backtester.objects.order.OrderSide;
 import Backtester.objects.order.OrderStatus;
 import Backtester.objects.order.OrderType;
 import com.google.inject.Inject;
@@ -31,12 +32,20 @@ public class PositionManager {
     // Ordering of whether we roll the PositionManager or script first will be important.
     public void roll(Bar bar) {
         this.currentBar = bar;
-        List<Order> openMarketOrders = orderCache.snapshot().values().stream().filter(order -> order.status() == OrderStatus.OPEN && order.orderType() == OrderType.Market).toList();
-        if (!openMarketOrders.isEmpty()) {
-            for (Order openOrder: openMarketOrders) {
-                Order filledOrder = openOrder.withFillPrice(bar.open).withOrderStatus(OrderStatus.FILLED).withFillDate(bar.date);
-                orderCache.addOrder(filledOrder);
-                applyToPosition(filledOrder, bar);
+        List<Order> openOrders = orderCache.snapshot().values().stream()
+                .filter(order -> order.status() == OrderStatus.OPEN)
+                .toList();
+        
+        if (!openOrders.isEmpty()) {
+            for (Order openOrder: openOrders) {
+                if (shouldFillOrder(openOrder, bar)) {
+                    double fillPrice = calculateFillPrice(openOrder, bar);
+                    Order filledOrder = openOrder.withFillPrice(fillPrice)
+                                               .withOrderStatus(OrderStatus.FILLED)
+                                               .withFillDate(bar.date);
+                    orderCache.addOrder(filledOrder);
+                    applyToPosition(filledOrder, bar);
+                }
             }
         }
     }
@@ -226,5 +235,51 @@ public class PositionManager {
             remainingToClose -= qtyToClose;
         }
         if (remainingToClose > 0) throw new IllegalStateException("Tried to close more than open trades allowed.");
+    }
+
+    private boolean shouldFillOrder(Order order, Bar bar) {
+        switch (order.orderType()) {
+            case Market:
+                return true; 
+            case Limit:
+                return shouldFillLimitOrder(order, bar);
+            case Stop:
+                return shouldFillStopOrder(order, bar);
+            default:
+                return false;
+        }
+    }
+
+    private boolean shouldFillLimitOrder(Order order, Bar bar) {
+        if (order.side() == OrderSide.BUY) return bar.low <= order.limitPrice();
+        else return bar.high >= order.limitPrice();
+    }
+
+    private boolean shouldFillStopOrder(Order order, Bar bar) {
+        if (order.side() == OrderSide.BUY) return bar.high >= order.stopPrice();
+        else return bar.low <= order.stopPrice();
+    }
+
+    private double calculateFillPrice(Order order, Bar bar) {
+        switch (order.orderType()) {
+            case Market:
+                return bar.open;
+            case Limit:
+                return calculateLimitFillPrice(order, bar);
+            case Stop:
+                return calculateStopFillPrice(order, bar);
+            default:
+                return bar.open;
+        }
+    }
+
+    private double calculateLimitFillPrice(Order order, Bar bar) {
+        if (order.side() == OrderSide.BUY) return Math.min(order.limitPrice(), bar.open);
+        else return Math.max(order.limitPrice(), bar.open);
+    }
+
+    private double calculateStopFillPrice(Order order, Bar bar) {
+        if (order.side() == OrderSide.BUY) return Math.max(order.stopPrice(), bar.open);
+        else return Math.min(order.stopPrice(), bar.open);
     }
 }
