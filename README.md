@@ -179,7 +179,7 @@ sma50 = sma(50)
 if crossover(sma20, sma50):
     createOrder("Golden Cross Long", true, 1000)
 
-if :crossover(sma50, sma20):
+if crossover(sma50, sma20):
     createOrder("Death Cross Short", false, 1000)
 
 # Example with limit and stop orders
