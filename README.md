@@ -87,7 +87,7 @@ sma20 = sma(20)
 // conditional statements
 if close() > open():
     createOrder("Long", true, 100)
-else crossover(sma20, sma50):
+else if crossover(sma20, sma50):
     createOrder("Golden Cross Long", true, 1000)
 ```
 
