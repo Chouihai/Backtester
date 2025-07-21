@@ -165,6 +165,7 @@ public class Parser {
         if (match(TokenType.INTEGER)) return new Literal(Integer.parseInt(previous().lexeme));
         if (match(TokenType.DOUBLE)) return new Literal(Double.parseDouble(previous().lexeme));
         if (match(TokenType.STRING)) return new Literal(previous().lexeme);
+        if (match(TokenType.NULL)) return new Literal(null);
 
         if (match(TokenType.IDENTIFIER)) {
             Token identifier = previous();

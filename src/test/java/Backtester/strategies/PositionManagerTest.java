@@ -198,17 +198,6 @@ class PositionManagerTest {
     }
 
     @Test
-    void testOrderTypeFiltering() {
-        Order marketOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Market, 0, 0, 0, 100, testDate, "test");
-        Order limitOrder = new Order(2, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Limit, 95.0, 0, 0, 100, testDate, "test");
-        orderCache.addOrder(marketOrder);
-        orderCache.addOrder(limitOrder);
-        positionManager.roll(testBar);
-        assertEquals(1, positionManager.openTrades());
-        assertEquals(100, getTotalOpenQuantity());
-    }
-
-    @Test
     void testTradeOrdering() {
         LocalDate date1 = testDate;
         LocalDate date2 = testDate.plusDays(1);
@@ -236,5 +225,295 @@ class PositionManagerTest {
         assertEquals(1, positionManager.closedTrades());
         assertEquals(40, getTotalOpenQuantity());
         assertEquals(60, getTotalClosedQuantity());
+    }
+
+    @Test
+    void testBuyLimitOrderFilledWhenPriceFalls() {
+        // Buy limit at 95, current bar low is 94 (should fill)
+        Order buyLimitOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Limit, 95.0, 0, 0, 100, testDate, "test");
+        orderCache.addOrder(buyLimitOrder);
+        Bar barWithLowPrice = new Bar(2, testDate.plusDays(1), 100.0, 105.0, 94.0, 102.0, 1000);
+        positionManager.roll(barWithLowPrice);
+        assertEquals(1, positionManager.openTrades());
+        assertEquals(0, positionManager.closedTrades());
+        assertEquals(100, getTotalOpenQuantity());
+    }
+
+    @Test
+    void testBuyLimitOrderNotFilledWhenPriceAbove() {
+        // Buy limit at 95, current bar low is 96 (should not fill)
+        Order buyLimitOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Limit, 95.0, 0, 0, 100, testDate, "test");
+        orderCache.addOrder(buyLimitOrder);
+        Bar barWithHighPrice = new Bar(2, testDate.plusDays(1), 100.0, 105.0, 96.0, 102.0, 1000);
+        positionManager.roll(barWithHighPrice);
+        assertEquals(0, positionManager.openTrades());
+        assertEquals(0, positionManager.closedTrades());
+        assertEquals(0, getTotalOpenQuantity());
+    }
+
+    @Test
+    void testSellLimitOrderFilledWhenPriceRises() {
+        // Sell limit at 105, current bar high is 106 (should fill)
+        Order sellLimitOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.Limit, 105.0, 0, 0, 100, testDate, "test");
+        orderCache.addOrder(sellLimitOrder);
+        Bar barWithHighPrice = new Bar(2, testDate.plusDays(1), 100.0, 106.0, 95.0, 102.0, 1000);
+        positionManager.roll(barWithHighPrice);
+        assertEquals(1, positionManager.openTrades());
+        assertEquals(0, positionManager.closedTrades());
+        assertEquals(100, getTotalOpenQuantity());
+    }
+
+    @Test
+    void testSellLimitOrderNotFilledWhenPriceBelow() {
+        // Sell limit at 105, current bar high is 104 (should not fill)
+        Order sellLimitOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.Limit, 105.0, 0, 0, 100, testDate, "test");
+        orderCache.addOrder(sellLimitOrder);
+        Bar barWithLowPrice = new Bar(2, testDate.plusDays(1), 100.0, 104.0, 95.0, 102.0, 1000);
+        positionManager.roll(barWithLowPrice);
+        assertEquals(0, positionManager.openTrades());
+        assertEquals(0, positionManager.closedTrades());
+        assertEquals(0, getTotalOpenQuantity());
+    }
+
+    @Test
+    void testBuyLimitOrderFillPriceCalculation() {
+        // Buy limit at 95, bar opens at 100, low at 94
+        // Should fill at 95 (limit price, not the better price of 94)
+        Order buyLimitOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Limit, 95.0, 0, 0, 100, testDate, "test");
+        orderCache.addOrder(buyLimitOrder);
+        Bar barWithLowPrice = new Bar(2, testDate.plusDays(1), 100.0, 105.0, 94.0, 102.0, 1000);
+        positionManager.roll(barWithLowPrice);
+
+        // Check that the order was filled at the limit price
+        var filledOrders = orderCache.snapshot().values().stream()
+                .filter(order -> order.status() == OrderStatus.FILLED)
+                .toList();
+        assertEquals(1, filledOrders.size());
+        assertEquals(95.0, filledOrders.get(0).fillPrice());
+    }
+
+    @Test
+    void testSellLimitOrderFillPriceCalculation() {
+        // Sell limit at 105, bar opens at 100, high at 106
+        // Should fill at 105 (limit price, not the better price of 106)
+        Order sellLimitOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.Limit, 105.0, 0, 0, 100, testDate, "test");
+        orderCache.addOrder(sellLimitOrder);
+        Bar barWithHighPrice = new Bar(2, testDate.plusDays(1), 100.0, 106.0, 95.0, 102.0, 1000);
+        positionManager.roll(barWithHighPrice);
+
+        // Check that the order was filled at the limit price
+        var filledOrders = orderCache.snapshot().values().stream()
+                .filter(order -> order.status() == OrderStatus.FILLED)
+                .toList();
+        assertEquals(1, filledOrders.size());
+        assertEquals(105.0, filledOrders.get(0).fillPrice());
+    }
+
+    @Test
+    void testBuyStopOrderFilledWhenPriceRises() {
+        // Buy stop at 105, current bar high is 106 (should fill)
+        Order buyStopOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Stop, 0, 105.0, 0, 100, testDate, "test");
+        orderCache.addOrder(buyStopOrder);
+        Bar barWithHighPrice = new Bar(2, testDate.plusDays(1), 100.0, 106.0, 95.0, 102.0, 1000);
+        positionManager.roll(barWithHighPrice);
+        assertEquals(1, positionManager.openTrades());
+        assertEquals(0, positionManager.closedTrades());
+        assertEquals(100, getTotalOpenQuantity());
+    }
+
+    @Test
+    void testBuyStopOrderNotFilledWhenPriceBelow() {
+        // Buy stop at 105, current bar high is 104 (should not fill)
+        Order buyStopOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Stop, 0, 105.0, 0, 100, testDate, "test");
+        orderCache.addOrder(buyStopOrder);
+        Bar barWithLowPrice = new Bar(2, testDate.plusDays(1), 100.0, 104.0, 95.0, 102.0, 1000);
+        positionManager.roll(barWithLowPrice);
+        assertEquals(0, positionManager.openTrades());
+        assertEquals(0, positionManager.closedTrades());
+        assertEquals(0, getTotalOpenQuantity());
+    }
+
+    @Test
+    void testSellStopOrderFilledWhenPriceFalls() {
+        // Sell stop at 95, current bar low is 94 (should fill)
+        Order sellStopOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.Stop, 0, 95.0, 0, 100, testDate, "test");
+        orderCache.addOrder(sellStopOrder);
+        Bar barWithLowPrice = new Bar(2, testDate.plusDays(1), 100.0, 105.0, 94.0, 102.0, 1000);
+        positionManager.roll(barWithLowPrice);
+        assertEquals(1, positionManager.openTrades());
+        assertEquals(0, positionManager.closedTrades());
+        assertEquals(100, getTotalOpenQuantity());
+    }
+
+    @Test
+    void testSellStopOrderNotFilledWhenPriceAbove() {
+        // Sell stop at 95, current bar low is 96 (should not fill)
+        Order sellStopOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.Stop, 0, 95.0, 0, 100, testDate, "test");
+        orderCache.addOrder(sellStopOrder);
+        Bar barWithHighPrice = new Bar(2, testDate.plusDays(1), 100.0, 105.0, 96.0, 102.0, 1000);
+        positionManager.roll(barWithHighPrice);
+        assertEquals(0, positionManager.openTrades());
+        assertEquals(0, positionManager.closedTrades());
+        assertEquals(0, getTotalOpenQuantity());
+    }
+
+    @Test
+    void testBuyStopOrderFillPriceCalculation() {
+        // Buy stop at 105, bar opens at 100, high at 106
+        // Should fill at 105 (stop price, not the worse price of 106)
+        Order buyStopOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Stop, 0, 105.0, 0, 100, testDate, "test");
+        orderCache.addOrder(buyStopOrder);
+        Bar barWithHighPrice = new Bar(2, testDate.plusDays(1), 100.0, 106.0, 95.0, 102.0, 1000);
+        positionManager.roll(barWithHighPrice);
+
+        // Check that the order was filled at the stop price
+        var filledOrders = orderCache.snapshot().values().stream()
+                .filter(order -> order.status() == OrderStatus.FILLED)
+                .toList();
+        assertEquals(1, filledOrders.size());
+        assertEquals(105.0, filledOrders.get(0).fillPrice());
+    }
+
+    @Test
+    void testSellStopOrderFillPriceCalculation() {
+        // Sell stop at 95, bar opens at 100, low at 94
+        // Should fill at 95 (stop price, not the worse price of 94)
+        Order sellStopOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.Stop, 0, 95.0, 0, 100, testDate, "test");
+        orderCache.addOrder(sellStopOrder);
+        Bar barWithLowPrice = new Bar(2, testDate.plusDays(1), 100.0, 105.0, 94.0, 102.0, 1000);
+        positionManager.roll(barWithLowPrice);
+
+        // Check that the order was filled at the stop price
+        var filledOrders = orderCache.snapshot().values().stream()
+                .filter(order -> order.status() == OrderStatus.FILLED)
+                .toList();
+        assertEquals(1, filledOrders.size());
+        assertEquals(95.0, filledOrders.get(0).fillPrice());
+    }
+
+    @Test
+    void testMixedOrderTypesInSameRoll() {
+        // Market order should always fill
+        Order marketOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Market, 0, 0, 0, 50, testDate, "test");
+        // Limit order should fill (limit at 95, bar low at 94)
+        Order limitOrder = new Order(2, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Limit, 95.0, 0, 0, 50, testDate, "test");
+        // Stop order should not fill (stop at 105, bar high at 104)
+        Order stopOrder = new Order(3, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Stop, 0, 105.0, 0, 50, testDate, "test");
+
+        orderCache.addOrder(marketOrder);
+        orderCache.addOrder(limitOrder);
+        orderCache.addOrder(stopOrder);
+
+        Bar mixedBar = new Bar(2, testDate.plusDays(1), 100.0, 104.0, 94.0, 102.0, 1000);
+        positionManager.roll(mixedBar);
+
+        // Only market and limit orders should fill
+        assertEquals(2, positionManager.openTrades());
+        assertEquals(0, positionManager.closedTrades());
+        assertEquals(100, getTotalOpenQuantity());
+
+        // Check that stop order remains open
+        var openOrders = orderCache.snapshot().values().stream()
+                .filter(order -> order.status() == OrderStatus.OPEN)
+                .toList();
+        assertEquals(1, openOrders.size());
+        assertEquals(OrderType.Stop, openOrders.get(0).orderType());
+    }
+
+    @Test
+    void testLimitOrderFillsOnExactPrice() {
+        // Buy limit at exactly 95, bar low is exactly 95 (should fill)
+        Order buyLimitOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.Limit, 95.0, 0, 0, 100, testDate, "test");
+        orderCache.addOrder(buyLimitOrder);
+        Bar exactBar = new Bar(2, testDate.plusDays(1), 100.0, 105.0, 95.0, 102.0, 1000);
+        positionManager.roll(exactBar);
+        assertEquals(1, positionManager.openTrades());
+        assertEquals(100, getTotalOpenQuantity());
+    }
+
+    @Test
+    void testStopOrderFillsOnExactPrice() {
+        // Sell stop at exactly 95, bar low is exactly 95 (should fill)
+        Order sellStopOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.Stop, 0, 95.0, 0, 100, testDate, "test");
+        orderCache.addOrder(sellStopOrder);
+        Bar exactBar = new Bar(2, testDate.plusDays(1), 100.0, 105.0, 95.0, 102.0, 1000);
+        positionManager.roll(exactBar);
+        assertEquals(1, positionManager.openTrades());
+        assertEquals(100, getTotalOpenQuantity());
+    }
+
+    @Test
+    void testBuyStopLimitOrderFillsOnlyIfStopAndLimitTriggered() {
+        // Buy stop-limit: stop at 105, limit at 95
+        Order stopLimitOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.StopLimit, 95.0, 105.0, 0, 100, testDate, "test");
+        orderCache.addOrder(stopLimitOrder);
+        // Bar triggers stop (high >= 105) and limit (low <= 95)
+        Bar bar = new Bar(2, testDate.plusDays(1), 100.0, 106.0, 94.0, 102.0, 1000);
+        positionManager.roll(bar);
+        var filledOrders = orderCache.snapshot().values().stream().filter(order -> order.status() == OrderStatus.FILLED).toList();
+        assertEquals(1, filledOrders.size());
+        assertEquals(OrderType.StopLimit, filledOrders.get(0).orderType());
+        assertEquals(95.0, filledOrders.get(0).fillPrice());
+    }
+
+    @Test
+    void testBuyStopLimitOrderDoesNotFillIfOnlyStopTriggered() {
+        // Buy stop-limit: stop at 105, limit at 95
+        Order stopLimitOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.StopLimit, 95.0, 105.0, 0, 100, testDate, "test");
+        orderCache.addOrder(stopLimitOrder);
+        // Bar triggers stop (high >= 105) but not limit (low > 95)
+        Bar bar = new Bar(2, testDate.plusDays(1), 100.0, 106.0, 96.0, 102.0, 1000);
+        positionManager.roll(bar);
+        var filledOrders = orderCache.snapshot().values().stream().filter(order -> order.status() == OrderStatus.FILLED).toList();
+        assertEquals(0, filledOrders.size());
+    }
+    @Test
+    void testBuyStopLimitOrderDoesNotFillIfOnlyLimitTriggered() {
+        // Buy stop-limit: stop at 105, limit at 95
+        Order stopLimitOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.BUY, OrderType.StopLimit, 95.0, 105.0, 0, 100, testDate, "test");
+        orderCache.addOrder(stopLimitOrder);
+        // Bar triggers limit (low <= 95) but not stop (high < 105)
+        Bar bar = new Bar(2, testDate.plusDays(1), 100.0, 104.0, 94.0, 102.0, 1000);
+        positionManager.roll(bar);
+        var filledOrders = orderCache.snapshot().values().stream().filter(order -> order.status() == OrderStatus.FILLED).toList();
+        assertEquals(0, filledOrders.size());
+    }
+
+    @Test
+    void testSellStopLimitOrderFillsOnlyIfStopAndLimitTriggered() {
+        // Sell stop-limit: stop at 95, limit at 105
+        Order stopLimitOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.StopLimit, 105.0, 95.0, 0, 100, testDate, "test");
+        orderCache.addOrder(stopLimitOrder);
+        // Bar triggers stop (low <= 95) and limit (high >= 105)
+        Bar bar = new Bar(2, testDate.plusDays(1), 100.0, 106.0, 94.0, 102.0, 1000);
+        positionManager.roll(bar);
+        var filledOrders = orderCache.snapshot().values().stream().filter(order -> order.status() == OrderStatus.FILLED).toList();
+        assertEquals(1, filledOrders.size());
+        assertEquals(OrderType.StopLimit, filledOrders.get(0).orderType());
+        assertEquals(105.0, filledOrders.get(0).fillPrice());
+    }
+
+    @Test
+    void testSellStopLimitOrderDoesNotFillIfOnlyStopTriggered() {
+        // Sell stop-limit: stop at 95, limit at 105
+        Order stopLimitOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.StopLimit, 105.0, 95.0, 0, 100, testDate, "test");
+        orderCache.addOrder(stopLimitOrder);
+        // Bar triggers stop (low <= 95) but not limit (high < 105)
+        Bar bar = new Bar(2, testDate.plusDays(1), 100.0, 104.0, 94.0, 102.0, 1000);
+        positionManager.roll(bar);
+        var filledOrders = orderCache.snapshot().values().stream().filter(order -> order.status() == OrderStatus.FILLED).toList();
+        assertEquals(0, filledOrders.size());
+    }
+
+    @Test
+    void testSellStopLimitOrderDoesNotFillIfOnlyLimitTriggered() {
+        // Sell stop-limit: stop at 95, limit at 105
+        Order stopLimitOrder = new Order(1, "AAPL", OrderStatus.OPEN, OrderSide.SELL, OrderType.StopLimit, 105.0, 95.0, 0, 100, testDate, "test");
+        orderCache.addOrder(stopLimitOrder);
+        // Bar triggers limit (high >= 105) but not stop (low > 95)
+        Bar bar = new Bar(2, testDate.plusDays(1), 100.0, 106.0, 96.0, 102.0, 1000);
+        positionManager.roll(bar);
+        var filledOrders = orderCache.snapshot().values().stream().filter(order -> order.status() == OrderStatus.FILLED).toList();
+        assertEquals(0, filledOrders.size());
     }
 } 

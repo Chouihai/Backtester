@@ -105,9 +105,9 @@ Detects when the first value crosses above the second value.
 - **Returns**: Boolean ValueAccumulator (evaluates to the most recent value)
 - **Example**: `crossover(sma20, sma50)`
 
-#### `createOrder(name, isBuy, quantity, [orderType], [limitPrice], [stopPrice])`
+#### `createOrder(name, isBuy, quantity, [limitPrice], [stopPrice])`
 Creates a new trading order with optional order type and pricing.
-- **Arguments**: 3-6 (order name, buy/sell flag, quantity, [orderType], [limitPrice], [stopPrice])
+- **Arguments**: 3-5 (order name, buy/sell flag, quantity, [limitPrice], [stopPrice])
 - **Returns**: void
 - **Order Types**: 
   - `MARKET` (default) - Fills immediately at current market price
@@ -115,8 +115,8 @@ Creates a new trading order with optional order type and pricing.
   - `STOP` - Fills when price reaches stop level
 - **Examples**:
   - `createOrder("Long", true, 1000)` - Market buy order
-  - `createOrder("Limit Buy", true, 500, "LIMIT", 95.0)` - Buy limit order at $95
-  - `createOrder("Stop Loss", false, 1000, "STOP", 0, 90.0)` - Sell stop order at $90
+  - `createOrder("Limit Buy", true, 500, 95.0)` - Buy limit order at $95
+  - `createOrder("Stop Loss", false, 1000, null, 90.0)` - Sell stop order at $90
 
 #### `close([lookback])`
 Accesses the close price from bars.

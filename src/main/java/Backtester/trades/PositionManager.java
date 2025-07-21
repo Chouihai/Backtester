@@ -7,7 +7,6 @@ import Backtester.objects.Trade;
 import Backtester.objects.order.Order;
 import Backtester.objects.order.OrderSide;
 import Backtester.objects.order.OrderStatus;
-import Backtester.objects.order.OrderType;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -238,16 +237,12 @@ public class PositionManager {
     }
 
     private boolean shouldFillOrder(Order order, Bar bar) {
-        switch (order.orderType()) {
-            case Market:
-                return true; 
-            case Limit:
-                return shouldFillLimitOrder(order, bar);
-            case Stop:
-                return shouldFillStopOrder(order, bar);
-            default:
-                return false;
-        }
+        return switch (order.orderType()) {
+            case Market -> true;
+            case Limit -> shouldFillLimitOrder(order, bar);
+            case Stop -> shouldFillStopOrder(order, bar);
+            case StopLimit -> shouldFillLimitOrder(order, bar) && shouldFillStopOrder(order, bar);
+        };
     }
 
     private boolean shouldFillLimitOrder(Order order, Bar bar) {
@@ -261,16 +256,11 @@ public class PositionManager {
     }
 
     private double calculateFillPrice(Order order, Bar bar) {
-        switch (order.orderType()) {
-            case Market:
-                return bar.open;
-            case Limit:
-                return calculateLimitFillPrice(order, bar);
-            case Stop:
-                return calculateStopFillPrice(order, bar);
-            default:
-                return bar.open;
-        }
+        return switch (order.orderType()) {
+            case Market -> bar.open;
+            case Limit, StopLimit -> calculateLimitFillPrice(order, bar);
+            case Stop -> calculateStopFillPrice(order, bar);
+        };
     }
 
     private double calculateLimitFillPrice(Order order, Bar bar) {

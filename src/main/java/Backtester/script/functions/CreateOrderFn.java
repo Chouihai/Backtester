@@ -18,9 +18,8 @@ public class CreateOrderFn implements ScriptFunction {
 
     private final Logger logger = null; // TODO: add logger later
     public static final String FUNCTION_NAME = "createOrder";
-    public static final int EXPECTED_ARGUMENTS = 3; // name, isBuy, quantity
     private final static int MINIMUM_ARGUMENTS_SIZE = 3; // name, isBuy, quantity are required
-    private final static int MAXIMUM_ARGUMENTS_SIZE = 6; // name, isBuy, quantity, orderType, limitPrice, stopPrice
+    private final static int MAXIMUM_ARGUMENTS_SIZE = 5; // name, isBuy, quantity, orderType, limitPrice, stopPrice
     private final OrderCache orderCache;
     private final String symbol = "AAPL"; // TODO Inject this later
     private final AtomicInteger idGenerator = new AtomicInteger(1); // Orders will exist entirely in memory
@@ -59,38 +58,46 @@ public class CreateOrderFn implements ScriptFunction {
         
         int quantity = Integer.parseInt(args.get(2).toString());
         if (quantity <= 0) throw new RuntimeException("Negative quantity in CreateOrderFn");
-        
-        OrderType orderType = OrderType.Market;
-        double limitPrice = 0.0;
-        double stopPrice = 0.0;
-        
-        if (args.size() >= 4 && args.get(3) != null) {
-            String orderTypeStr = args.get(3).toString().toUpperCase();
-            try {
-                orderType = OrderType.valueOf(orderTypeStr);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid order type: " + orderTypeStr + ". Must be MARKET, LIMIT, or STOP");
+
+        double limitPrice = Double.NaN;
+        double stopPrice = Double.NaN;
+
+        if (args.size() >= 4) {
+            Object limitArg = args.get(3);
+            if (limitArg != null) {
+                limitPrice = Double.parseDouble(limitArg.toString());
+                if (limitPrice < 0) throw new IllegalArgumentException("Limit price cannot be negative");
             }
         }
-        
+
         if (args.size() >= 5 && args.get(4) != null) {
-            limitPrice = Double.parseDouble(args.get(4).toString());
-            if (limitPrice < 0) throw new IllegalArgumentException("Limit price cannot be negative");
-        }
-        
-        if (args.size() >= 6 && args.get(5) != null) {
-            stopPrice = Double.parseDouble(args.get(5).toString());
+            stopPrice = Double.parseDouble(args.get(4).toString());
             if (stopPrice < 0) throw new IllegalArgumentException("Stop price cannot be negative");
         }
-        
-        if (orderType == OrderType.Limit && limitPrice <= 0) {
-            throw new IllegalArgumentException("Limit orders require a positive limit price");
-        }
-        if (orderType == OrderType.Stop && stopPrice <= 0) {
-            throw new IllegalArgumentException("Stop orders require a positive stop price");
-        }
-        
+
+        OrderType orderType = getOrderType(limitPrice, stopPrice);
+
         return new CreateOrderFnArguments(name, side, quantity, orderType, limitPrice, stopPrice);
+    }
+
+    private static OrderType getOrderType(double limitPrice, double stopPrice) {
+        OrderType orderType;
+        boolean hasLimit = !Double.isNaN(limitPrice);
+        boolean hasStop = !Double.isNaN(stopPrice);
+        if (!hasLimit && !hasStop) {
+            orderType = OrderType.Market;
+        } else if (hasLimit && !hasStop) {
+            orderType = OrderType.Limit;
+            if (limitPrice <= 0) throw new IllegalArgumentException("Limit orders require a positive limit price");
+        } else if (!hasLimit) {
+            orderType = OrderType.Stop;
+            if (stopPrice <= 0) throw new IllegalArgumentException("Stop orders require a positive stop price");
+        } else {
+            orderType = OrderType.StopLimit;
+            if (limitPrice <= 0) throw new IllegalArgumentException("Stop-limit orders require a positive limit price");
+            if (stopPrice <= 0) throw new IllegalArgumentException("Stop-limit orders require a positive stop price");
+        }
+        return orderType;
     }
 }
 

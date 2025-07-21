@@ -26,7 +26,6 @@ public class FunctionCall extends Expression {
         FUNCTION_SIGNATURES.put(HighFunction.FUNCTION_NAME, HighFunction.getSignatureProperties());
         FUNCTION_SIGNATURES.put(LowFunction.FUNCTION_NAME, LowFunction.getSignatureProperties());
         FUNCTION_SIGNATURES.put(VolumeFunction.FUNCTION_NAME, VolumeFunction.getSignatureProperties());
-
     }
 
     public FunctionCall(String functionName, List<Expression> arguments) {
