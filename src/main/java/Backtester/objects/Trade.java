@@ -77,7 +77,7 @@ public class Trade {
     }
 
     public double openPnL(Bar currentBar) {
-        if (!exit.isEmpty()) return 0;
+        if (exit.isPresent()) return 0;
         double entryValue = entry.open * quantity;
         double currentValue = currentBar.open * quantity;
         int sign = isLong() ? 1 : -1;

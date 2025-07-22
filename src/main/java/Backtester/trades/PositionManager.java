@@ -50,12 +50,7 @@ public class PositionManager {
     }
 
     public double netProfit() {
-        List<Trade> closedTrades = position.getTrades().stream().filter(trade -> !trade.isOpen()).toList();
-        double sum = 0;
-        for (Trade trade: closedTrades) {
-            sum += trade.profit();
-        }
-        return sum;
+        return position.netProfit();
     }
 
     public double grossProfit() {
@@ -93,19 +88,13 @@ public class PositionManager {
         List<Trade> openTrades = new ArrayList<>(position.getTrades().stream().filter(Trade::isOpen).toList());
         double sum = 0;
         for (Trade openTrade: openTrades) {
-            double entryValue = openTrade.entry.open * openTrade.getQuantity();
-            double closeValue = currentBar.open * openTrade.getQuantity();
-            double pnl = closeValue - entryValue;
-            sum += pnl;
+            sum += openTrade.openPnL(currentBar);
         }
         return sum;
     }
 
     public double openPnl(Trade trade) {
-        double entryValue = trade.entry.open * trade.getQuantity();
-        double closeValue = currentBar.open * trade.getQuantity();
-        int sign = trade.isLong() ? 1 : -1;
-        return sign * (closeValue - entryValue);
+        return trade.openPnL(currentBar);
     }
 
     public double maxDrawdown() {
