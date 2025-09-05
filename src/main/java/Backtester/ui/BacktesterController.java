@@ -1,22 +1,39 @@
 package Backtester.ui;
 
-import Backtester.caches.BarCache;
 import Backtester.objects.Bar;
 import Backtester.objects.Trade;
 import Backtester.script.tokens.Parser;
 import Backtester.services.HistoricalDataService;
+import Backtester.strategies.RunResult;
 import Backtester.strategies.StrategyRunner;
-import Backtester.trades.PositionManager;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYItemRenderer;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.time.Day;
+import org.jfree.data.time.TimeSeries;
+import org.jfree.data.time.TimeSeriesCollection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -29,8 +46,6 @@ public class BacktesterController {
 
     // Services
     private final HistoricalDataService historicalDataService;
-    private final StrategyRunner strategyRunner;
-    private final PositionManager positionManager;
 
     // UI Components
     public TextField symbolField;
@@ -51,16 +66,25 @@ public class BacktesterController {
     public Label sharpeRatioLabel;
     public ProgressBar progressBar;
     public Label statusLabel;
+    public TextField permutationsField;
+    public TextField blockSizeField;
+
+    // Monte Carlo output labels
+    public Label mcNetProfitLabel;
+    public Label mcMaxDrawdownLabel;
+    public Label mcSharpeLabel;
+    public Label mcEntriesLabel;
+    public Label mcOpenTradesLabel;
+    public Label mcClosedTradesLabel;
+    public Label mcWinnersLabel;
+    public Label mcLosersLabel;
+    public Bar lastBar;
 
     private ObservableList<Trade> tradesData = FXCollections.observableArrayList();
     private volatile boolean isRunning = false;
 
-    public BacktesterController(HistoricalDataService historicalDataService, 
-                               StrategyRunner strategyRunner,
-                                PositionManager positionManager) {
+    public BacktesterController(HistoricalDataService historicalDataService) {
         this.historicalDataService = historicalDataService;
-        this.strategyRunner = strategyRunner;
-        this.positionManager = positionManager;
     }
 
     @FXML
@@ -70,9 +94,27 @@ public class BacktesterController {
     }
 
     private void setupUI() {
-        startDatePicker.setValue(LocalDate.now().minusMonths(6));
-        endDatePicker.setValue(LocalDate.now());
+        // Default inputs
+        startDatePicker.setValue(LocalDate.of(2024, 3, 14));
+        endDatePicker.setValue(LocalDate.of(2025, 5, 1));
+        if (symbolField != null) {
+            symbolField.setText("AAPL");
+        }
+        if (strategyTextArea != null) {
+            String defaultStrategy = """
+                    sma20 = sma(20)
+                    sma50 = sma(50)
+
+                    if (crossover(sma20, sma50)):
+                        createOrder("long", true, 1000)
+                    if (crossover(sma50, sma20)):
+                        createOrder("position1", false, 1000)
+                    """;
+            strategyTextArea.setText(defaultStrategy);
+        }
         initialCapitalField.setText("100000");
+        if (permutationsField != null) permutationsField.setText("100");
+        if (blockSizeField != null) blockSizeField.setText("10");
         tradesTable.setItems(tradesData);
         progressBar.setVisible(false);
         statusLabel.setText("Ready to run backtest");
@@ -125,53 +167,43 @@ public class BacktesterController {
             String strategyScript = strategyTextArea.getText();
 
             Platform.runLater(() -> statusLabel.setText("Fetching data for " + symbol + "..."));
-            List<Bar> bars = historicalDataService.getHistoricalData(symbol);
-            
+            List<Bar> bars = historicalDataService.getHistoricalData(symbol, startDate, endDate);
+            logger.info("Fetched {} bars for {} within selected range.", bars.size(), symbol);
+
             if (bars.isEmpty()) {
                 throw new RuntimeException("No data available for " + symbol + ". Please check the symbol and try again.");
             }
 
-            // Validate that the requested dates are within the available data range
-            LocalDate availableStartDate = bars.getFirst().date;
-            LocalDate availableEndDate = bars.getLast().date;
+            final List<LocalDate> dates = new ArrayList<>();
+            final List<Double> buyAndHoldEquity = new ArrayList<>();
+            double shares = initialCapital / bars.getFirst().close;
 
-            logger.info("Fetched " + bars.size() + " time series values for " + symbol + " from " + availableStartDate + " to " + availableEndDate + ".");
-            
-            if (startDate.isBefore(availableStartDate)) {
-                throw new RuntimeException(String.format(
-                    "Start date %s is before the earliest available data (%s). " +
-                    "Please select a start date on or after %s.", 
-                    startDate, availableStartDate, availableStartDate));
+            for (Bar bar: bars){
+                dates.add(bar.date);
+                buyAndHoldEquity.add(shares * bar.close);
             }
-            
-            if (endDate.isAfter(availableEndDate)) {
-                throw new RuntimeException(String.format(
-                    "End date %s is after the latest available data (%s). " +
-                    "Please select an end date on or before %s.", 
-                    endDate, availableEndDate, availableEndDate));
-            }
-            
-            // Check if the dates exist in the data (some dates might be missing due to weekends/holidays)
-            BarCache barCache = new BarCache();
-            barCache.loadCache(bars);
-            
+
             Platform.runLater(() -> statusLabel.setText("Running strategy..."));
 
+            RunResult results = null;
             if (!strategyScript.trim().isEmpty()) {
                 try {
-                    strategyRunner.run(strategyScript, startDate, endDate, 100);
+                    StrategyRunner strategyRunner = new StrategyRunner(bars, strategyScript, logger);
+                    results = strategyRunner.run(initialCapital);
                 } catch (Exception e) {
                     throw new RuntimeException("Strategy parsing failed: " + e.getMessage());
                 }
             }
 
             // Update UI with results
+            RunResult finalResults = results;
             Platform.runLater(() -> {
-                updateResults();
-                statusLabel.setText("Backtest completed successfully");
-                resetUI();
+                if (finalResults != null) {
+                    updateResults(finalResults, dates, buyAndHoldEquity);
+                    statusLabel.setText("Backtest completed successfully");
+                    resetUI();
+                }
             });
-
         } catch (Exception e) {
             logger.error("Backtest failed", e);
             Platform.runLater(() -> {
@@ -226,17 +258,18 @@ public class BacktesterController {
         return true;
     }
 
-    private void updateResults() {
+    private void updateResults(RunResult results, List<LocalDate> dates, List<Double> buyAndHold) {
         tradesData.clear();
-        tradesData.addAll(positionManager.allTrades());
+        tradesData.addAll(results.trades());
 
-        double netProfit = positionManager.netProfit();
-        double grossProfit = positionManager.grossProfit();
-        double grossLoss = positionManager.grossLoss();
-        double openPnL = positionManager.openPnL();
-        double maxDrawdown = positionManager.maxDrawdown();
-        double maxRunUp = positionManager.maxRunUp();
-        double sharpeRatio = positionManager.sharpeRatio();
+        double netProfit = results.netProfit();
+        double grossProfit = results.grossProfit();
+        double grossLoss = results.grossLoss();
+        double openPnL = results.openPnL();
+        double maxDrawdown = results.maxDrawdown();
+        double maxRunUp = results.maxRunup();
+        double sharpeRatio = results.sharpe();
+        lastBar = results.lastBar();
 
         netProfitLabel.setText(formatCurrency(netProfit));
         setLabelColor(netProfitLabel, netProfit);
@@ -259,7 +292,7 @@ public class BacktesterController {
         sharpeRatioLabel.setText(formatDecimal(sharpeRatio));
         setLabelColor(sharpeRatioLabel, sharpeRatio);
 
-        updateChart();
+        updateChart(results, dates, buyAndHold);
     }
 
     private String formatCurrency(double value) {
@@ -280,20 +313,82 @@ public class BacktesterController {
         return String.format("%.2f", value);
     }
 
-    public double openPnl(Trade trade) {
-        return positionManager.openPnl(trade);
-    }
-
-    private void updateChart() {
-        // Placeholder for chart update
-        // TODO: Implement chart visualization
-        if (chartContainer != null) {
-            chartContainer.getChildren().clear();
-            Label chartLabel = new Label("Chart visualization coming soon...");
-            chartLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");
-            chartContainer.getChildren().add(chartLabel);
+    private int parseOrDefault(String text, int def) {
+        try {
+            return Integer.parseInt(text.trim());
+        } catch (Exception e) {
+            return def;
         }
     }
+
+    private void updateChart(RunResult result, List<LocalDate> dates, List<Double> buyAndHold) {
+        if (chartContainer == null) return;
+        chartContainer.getChildren().clear();
+
+        var strat = result.strategyEquity();
+
+        if (dates.isEmpty() || strat.isEmpty() || buyAndHold.isEmpty()) {
+            Label chartLabel = new Label("No equity data. Run a backtest.");
+            chartLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");
+            chartContainer.getChildren().add(chartLabel);
+            return;
+        }
+
+        TimeSeries strategySeries = new TimeSeries("Strategy");
+        TimeSeries bhSeries = new TimeSeries("Buy & Hold");
+        for (int i = 0; i < dates.size(); i++) {
+            LocalDate d = dates.get(i);
+            Day day = new Day(d.getDayOfMonth(), d.getMonthValue(), d.getYear());
+            strategySeries.add(day, strat.get(i));
+            bhSeries.add(day, buyAndHold.get(i));
+        }
+        TimeSeriesCollection dataset = new TimeSeriesCollection();
+        dataset.addSeries(strategySeries);
+        dataset.addSeries(bhSeries);
+
+        // No internal chart title; the section already has a title
+        JFreeChart chart = ChartFactory.createTimeSeriesChart(
+                null,
+                "Date",
+                "Equity ($)",
+                dataset,
+                true,
+                true,
+                false
+        );
+
+        // Some basic styling
+        XYPlot plot = chart.getXYPlot();
+        XYItemRenderer renderer = plot.getRenderer();
+        if (renderer instanceof XYLineAndShapeRenderer lineRenderer) {
+            lineRenderer.setDefaultShapesVisible(false);
+            lineRenderer.setSeriesPaint(0, new Color(39, 174, 96));
+            lineRenderer.setSeriesPaint(1, new Color(52, 152, 219));
+            lineRenderer.setSeriesStroke(0, new BasicStroke(2.0f));
+            lineRenderer.setSeriesStroke(1, new BasicStroke(2.0f));
+        }
+
+        // Render chart to image to avoid SwingNode/module export issues
+        BufferedImage img = chart.createBufferedImage(1200, 320);
+        Image fxImage = SwingFXUtils.toFXImage(img, null);
+        ImageView imageView = new ImageView(fxImage);
+        imageView.setPreserveRatio(true);
+        // Fit inside fixed-height container and fill width
+        imageView.fitHeightProperty().bind(chartContainer.heightProperty());
+        imageView.fitWidthProperty().bind(chartContainer.widthProperty());
+        chartContainer.getChildren().add(imageView);
+    }
+
+//    private void updateMonteCarloResults(MonteCarloResult mc) {
+//        if (mcNetProfitLabel != null) mcNetProfitLabel.setText(formatCurrency(mc.avgNetProfit));
+//        if (mcMaxDrawdownLabel != null) mcMaxDrawdownLabel.setText(formatPercentage(mc.avgMaxDrawdown));
+//        if (mcSharpeLabel != null) mcSharpeLabel.setText(formatDecimal(mc.avgSharpe));
+//        if (mcEntriesLabel != null) mcEntriesLabel.setText(String.valueOf(Math.round(mc.avgEntries)));
+//        if (mcOpenTradesLabel != null) mcOpenTradesLabel.setText(String.valueOf(Math.round(mc.avgOpenTrades)));
+//        if (mcClosedTradesLabel != null) mcClosedTradesLabel.setText(String.valueOf(Math.round(mc.avgClosedTrades)));
+//        if (mcWinnersLabel != null) mcWinnersLabel.setText(String.valueOf(Math.round(mc.avgWinners)));
+//        if (mcLosersLabel != null) mcLosersLabel.setText(String.valueOf(Math.round(mc.avgLosers)));
+//    }
 
     private void setLabelColor(Label label, double value) {
         if (Double.isNaN(value)) {
@@ -332,4 +427,4 @@ public class BacktesterController {
     public void shutdown() {
         executorService.shutdown();
     }
-} 
+}

@@ -1,19 +1,20 @@
 package Backtester.objects.valueaccumulator;
 
-import Backtester.caches.BarCache;
 import Backtester.objects.Bar;
+
+import java.util.List;
 
 public class OhlcvValueAccumulator implements ValueAccumulator<Double> {
 
     private final OhlcvField field;
     private final int lookback;
-    private final BarCache barCache;
+    private final List<Bar> bars;
     private int currentIndex;
 
-    public OhlcvValueAccumulator(OhlcvField field, int lookback, BarCache barCache, int currentIndex) {
+    public OhlcvValueAccumulator(OhlcvField field, int lookback, List<Bar> bars, int currentIndex) {
         this.field = field;
         this.lookback = lookback;
-        this.barCache = barCache;
+        this.bars = bars;
         this.currentIndex = currentIndex;
     }
 
@@ -30,7 +31,7 @@ public class OhlcvValueAccumulator implements ValueAccumulator<Double> {
             throw new RuntimeException("Cannot access bar " + lookback + " bars back from current position");
         }
 
-        Bar targetBar = barCache.get(targetIndex);
+        Bar targetBar = bars.get(targetIndex);
 
         return switch (field) {
             case OPEN -> targetBar.open;
@@ -50,7 +51,7 @@ public class OhlcvValueAccumulator implements ValueAccumulator<Double> {
     }
 
     public ValueAccumulator<Double> copy() {
-        return new OhlcvValueAccumulator(field, lookback, barCache, currentIndex);
+        return new OhlcvValueAccumulator(field, lookback, bars, currentIndex);
     }
 }
 

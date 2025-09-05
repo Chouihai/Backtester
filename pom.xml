@@ -75,6 +75,18 @@
             <artifactId>javafx-web</artifactId>
             <version>24</version>
         </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>24</version>
+        </dependency>
+
+        <!-- Charting -->
+        <dependency>
+            <groupId>org.jfree</groupId>
+            <artifactId>jfreechart</artifactId>
+            <version>1.5.4</version>
+        </dependency>
     </dependencies>
     <properties>
         <maven.compiler.source>22</maven.compiler.source>
@@ -110,7 +122,10 @@
                 <configuration>
                     <mainClass>Backtester.ui.BacktesterApplication</mainClass>
                     <options>
+                        <option>--add-modules</option>
+                        <option>javafx.controls,javafx.fxml,javafx.swing,javafx.web</option>
                         <option>--enable-preview</option>
+                        <option>--add-exports=javafx.graphics/com.sun.javafx.scene=ALL-UNNAMED</option>
                     </options>
                 </configuration>
             </plugin>

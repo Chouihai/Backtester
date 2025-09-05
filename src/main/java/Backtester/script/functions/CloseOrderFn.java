@@ -1,9 +1,8 @@
 package Backtester.script.functions;
 
-import Backtester.caches.OrderCache;
-import Backtester.script.EvaluationContext;
 import Backtester.script.functions.result.ScriptFunctionResult;
 import Backtester.script.statements.expressions.FunctionSignatureProperties;
+import Backtester.strategies.RunContext;
 
 import java.util.List;
 
@@ -12,21 +11,13 @@ public class CloseOrderFn implements ScriptFunction {
     public static final String FUNCTION_NAME = "closeOrder";
     public static final int EXPECTED_ARGUMENTS = 1; // orderId
     private final static int ARGUMENTS_SIZE = 1; // Later on might want to have required vs optional args
-    private final OrderCache orderCache;
 //    private final BacktestRunPositionCache positionCache;
-
-
-    // When there is no quantity and just an Id. It should create a reverse order with the quantity of the order with that Id.
-
-    public CloseOrderFn(OrderCache orderCache) {
-        this.orderCache = orderCache;
-    }
 
     public static FunctionSignatureProperties getSignatureProperties() {
         return new FunctionSignatureProperties(EXPECTED_ARGUMENTS, EXPECTED_ARGUMENTS);
     }
 
-    public ScriptFunctionResult execute(List<Object> args, EvaluationContext context) {
+    public ScriptFunctionResult execute(List<Object> args, RunContext runContext) {
         // TODO: implement this later
 //        CloseOrderFnArguments arguments = validateArgs(args);
 //        Set<Order> orders = orderCache.getOrder(arguments.id());

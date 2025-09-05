@@ -1,14 +1,13 @@
 package Backtester.script.functions;
 
-import Backtester.caches.OrderCache;
 import Backtester.objects.order.Order;
 import Backtester.objects.order.OrderSide;
 import Backtester.objects.order.OrderStatus;
 import Backtester.objects.order.OrderType;
-import Backtester.script.EvaluationContext;
 import Backtester.script.functions.result.ScriptFunctionResult;
 import Backtester.script.functions.result.VoidScriptFunctionResult;
 import Backtester.script.statements.expressions.FunctionSignatureProperties;
+import Backtester.strategies.RunContext;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -20,21 +19,15 @@ public class CreateOrderFn implements ScriptFunction {
     public static final String FUNCTION_NAME = "createOrder";
     private final static int MINIMUM_ARGUMENTS_SIZE = 3; // name, isBuy, quantity are required
     private final static int MAXIMUM_ARGUMENTS_SIZE = 5; // name, isBuy, quantity, orderType, limitPrice, stopPrice
-    private final OrderCache orderCache;
     private final String symbol = "AAPL"; // TODO Inject this later
     private final AtomicInteger idGenerator = new AtomicInteger(1); // Orders will exist entirely in memory
 
-    // Use injection later
-    public CreateOrderFn(OrderCache orderCache) {
-        this.orderCache = orderCache;
-    }
-
-    public ScriptFunctionResult execute(List<Object> args, EvaluationContext context) {
+    public ScriptFunctionResult execute(List<Object> args, RunContext runContext) {
         CreateOrderFnArguments arguments = validateArgs(args);
         Order newOrder = new Order(idGenerator.getAndIncrement(), symbol, OrderStatus.OPEN, arguments.side(), 
                                  arguments.orderType(), arguments.limitPrice(), arguments.stopPrice(), 
                                  0.0, arguments.quantity(), null, arguments.name());
-        orderCache.addOrder(newOrder);
+        runContext.orderCache.addOrder(newOrder);
         return new VoidScriptFunctionResult();
     }
 

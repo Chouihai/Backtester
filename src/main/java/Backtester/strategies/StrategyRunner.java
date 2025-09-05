@@ -1,65 +1,47 @@
 package Backtester.strategies;
 
-import Backtester.caches.BarCache;
-import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.Bar;
-import Backtester.objects.CompiledScript;
-import Backtester.script.EvaluationContext;
 import Backtester.script.ScriptEvaluator;
-import Backtester.script.functions.ScriptFunctionRegistry;
-import Backtester.script.functions.ScriptFunctionRegistryFactory;
-import Backtester.script.tokens.Parser;
 import Backtester.trades.PositionManager;
-import com.google.inject.Inject;
+import org.slf4j.Logger;
 
-import java.time.LocalDate;
-import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.List;
 
 public class StrategyRunner {
 
-    private ScriptEvaluator evaluator;
-    private final ScriptFunctionRegistryFactory scriptFunctionRegistryFactory;
-    private final ValueAccumulatorCache valueAccumulatorCache;
-    private final PositionManager positionManager;
-    private final BarCache barCache;
+    private final ScriptEvaluator evaluator;
+    private final List<Bar> bars;
     private final Logger logger;
+    private final List<Double> strategyEquity = new ArrayList<>();
+    private final RunContext runContext;
 
-    @Inject()
-    public StrategyRunner(ScriptFunctionRegistryFactory scriptFunctionRegistryFactory,
-                          ValueAccumulatorCache valueAccumulatorCache,
-                          PositionManager positionManager,
-                          Logger logger,
-                          BarCache barCache) {
-        this.scriptFunctionRegistryFactory = scriptFunctionRegistryFactory;
-        this.valueAccumulatorCache = valueAccumulatorCache;
-        this.positionManager = positionManager;
-        this.barCache = barCache;
+    public StrategyRunner(List<Bar> bars,
+                          String script,
+                          Logger logger) {
+        this.bars = bars;
         this.logger = logger;
+        this.evaluator = new ScriptEvaluator(script);
+        this.runContext = new RunContext(bars);
     }
 
-    public void run(String strategy, LocalDate startDate, LocalDate endDate, int permutations) {
-        int initialIndex = barCache.findIndexAfterDate(startDate);
-        int endIndex = barCache.findIndexBeforeDate(endDate);
-        logger.info("About to start running strategy starting at index " + initialIndex + " and ending at index " + endIndex);
-        initialize(strategy, initialIndex);
-        int i = initialIndex + 1;
-        while (i < endIndex) {
-            roll(barCache.get(i));
-            i++;
+    public RunResult run(double initialCapital) {
+        int n = bars.size();
+        logger.info("Running strategy across " + n  + " cached bars");
+        evaluator.evaluate(runContext);
+        for (int i = 1; i < n; i++) {
+            Bar bar = bars.get(i);
+            roll(bar);
+
+            double realized = runContext.positionManager.netProfit();
+            double unrealized = runContext.positionManager.openPnL();
+            double equity = initialCapital + realized + unrealized;
+            strategyEquity.add(equity);
         }
-        logger.info("Finished running strategy"); // TODO do a timed log later
-    }
-
-    /**
-     * Get all functions and value accumulators needed
-     */
-    public void initialize(String strategy, int startingIndex) {
-        positionManager.reset();
-        valueAccumulatorCache.reset();
-        CompiledScript compiled = new Parser().parse(strategy);
-        ScriptFunctionRegistry registry = scriptFunctionRegistryFactory.createRegistry(compiled.functionCalls());
-        this.evaluator = new ScriptEvaluator(compiled, registry, valueAccumulatorCache);
-        this.evaluator.evaluate(new EvaluationContext(startingIndex));
+        logger.info("Finished running strategy");
+        PositionManager pm = runContext.positionManager;
+        return new RunResult(pm.allTrades(), pm.netProfit(), pm.grossProfit(), pm.grossLoss(), pm.sharpeRatio(), pm.openPnL(), pm.maxDrawdown(),
+                pm.maxRunUp(), runContext.bars.getLast(), strategyEquity);
     }
 
     /**
@@ -67,9 +49,7 @@ public class StrategyRunner {
      * Then we run the script... I think
      */
     public void roll(Bar bar) {
-        this.valueAccumulatorCache.roll(bar);
-        this.positionManager.roll(bar);
-        evaluator.evaluate(new EvaluationContext(bar.index));
+        runContext.roll(bar);
+        evaluator.evaluate(runContext);
     }
 }
-

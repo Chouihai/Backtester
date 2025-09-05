@@ -1,10 +1,10 @@
 package Backtester.script;
 
-import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.CompiledScript;
 import Backtester.objects.valueaccumulator.ValueAccumulator;
 import Backtester.script.functions.ScriptFunction;
 import Backtester.script.functions.ScriptFunctionRegistry;
+import Backtester.script.functions.ScriptFunctionRegistryFactory;
 import Backtester.script.functions.result.NonVoidScriptFunctionResult;
 import Backtester.script.functions.result.ScriptFunctionResult;
 import Backtester.script.functions.result.VoidScriptFunctionResult;
@@ -15,6 +15,7 @@ import Backtester.script.statements.VariableDeclaration;
 import Backtester.script.statements.expressions.*;
 import Backtester.script.tokens.Parser;
 import Backtester.script.tokens.TokenType;
+import Backtester.strategies.RunContext;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,25 +24,20 @@ import java.util.Objects;
 
 public class ScriptEvaluator {
 
-    private final ScriptFunctionRegistry registry;
     private final CompiledScript compiledScript;
     private final Map<String, Literal> variables = new HashMap<>();
-    private EvaluationContext currentContext;
+    private RunContext currentContext;
+    private final ScriptFunctionRegistry registry;
 
-    public ScriptEvaluator(String script, ScriptFunctionRegistry registry, ValueAccumulatorCache valueAccumulatorCache) {
-        Parser parser = new Parser();
-        this.compiledScript = parser.parse(script);
-        this.registry = registry;
+    public ScriptEvaluator(String script) {
+        CompiledScript compiled = new Parser().parse(script);
+        this.compiledScript = compiled;
+        this.registry = ScriptFunctionRegistryFactory.createRegistry(compiled.functionCalls());
     }
 
-    public ScriptEvaluator(CompiledScript script, ScriptFunctionRegistry registry, ValueAccumulatorCache valueAccumulatorCache) {
-        this.compiledScript = script;
-        this.registry = registry;
-    }
-
-    public void evaluate(EvaluationContext context) {
-        this.currentContext = context;
+    public void evaluate(RunContext runContext) {
         List<Statement> statements = compiledScript.statements();
+        this.currentContext = runContext;
         for (Statement stmt : statements) {
             evaluate(stmt);
         }
@@ -114,7 +110,7 @@ public class ScriptEvaluator {
         } else l = ((Number) left).doubleValue();
         double r;
         if (right instanceof ValueAccumulator<?> va && va.getValue() instanceof Number d) {
-             r = d.doubleValue();
+            r = d.doubleValue();
         } else r = ((Number) right).doubleValue();
         return switch (op) {
             case GREATER -> l > r;

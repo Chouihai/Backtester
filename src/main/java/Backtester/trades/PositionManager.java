@@ -22,6 +22,15 @@ public class PositionManager {
     private Bar currentBar;
     private static final Comparator<Trade> TRADE_ORDERING = Comparator.comparing(Trade::getEntryBarDate).thenComparing(Trade::getOrderId);
 
+    // Equity and metrics tracking
+    private double initialCapital = 100_000.0;
+    private final List<Double> equitySeries = new ArrayList<>();
+    private final List<Double> periodReturns = new ArrayList<>();
+    private double peakEquity = Double.NaN;
+    private double troughEquity = Double.NaN;
+    private double maxDrawdownFraction = Double.NaN; // negative value (e.g., -0.25)
+    private double maxRunUpFraction = Double.NaN;    // positive value (e.g., 0.30)
+
     @Inject
     public PositionManager(OrderCache orderCache) {
         this.orderCache = orderCache;
@@ -47,6 +56,7 @@ public class PositionManager {
                 }
             }
         }
+        updateEquityMetrics();
     }
 
     public double netProfit() {
@@ -98,15 +108,25 @@ public class PositionManager {
     }
 
     public double maxDrawdown() {
-        return Double.NaN; // TODO
+        return maxDrawdownFraction;
     }
 
     public double maxRunUp() {
-        return Double.NaN; // TODO
+        return maxRunUpFraction;
     }
 
     public double sharpeRatio() {
-        return Double.NaN; // TODO
+        if (periodReturns.size() < 2) return Double.NaN;
+        double mean = periodReturns.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
+        double variance = 0.0;
+        for (double r : periodReturns) {
+            variance += Math.pow(r - mean, 2);
+        }
+        variance /= (periodReturns.size() - 1); // sample variance
+        double stdDev = Math.sqrt(variance);
+        if (stdDev == 0.0) return 0.0;
+        // Assume daily bars; annualize with 252
+        return (mean / stdDev) * Math.sqrt(252);
     }
 
     public int openTrades() {
@@ -121,6 +141,22 @@ public class PositionManager {
         return position.getTrades().stream().filter(Trade::isClosed).toList().size();
     }
 
+    public int entriesCount() {
+        return position.getTrades().size();
+    }
+
+    public int winnersCount() {
+        return (int) position.getTrades().stream()
+                .filter(trade -> trade.isClosed() && trade.profit() > 0)
+                .count();
+    }
+
+    public int losersCount() {
+        return (int) position.getTrades().stream()
+                .filter(trade -> trade.isClosed() && trade.profit() < 0)
+                .count();
+    }
+
     public Position getPosition() {
         return position;
     }
@@ -129,6 +165,53 @@ public class PositionManager {
         this.position = new Position();
         this.orderCache.reset();
         this.currentBar = null;
+        this.equitySeries.clear();
+        this.periodReturns.clear();
+        this.peakEquity = Double.NaN;
+        this.troughEquity = Double.NaN;
+        this.maxDrawdownFraction = Double.NaN;
+        this.maxRunUpFraction = Double.NaN;
+    }
+
+    public void setInitialCapital(double initialCapital) {
+        this.initialCapital = initialCapital;
+    }
+
+    private void updateEquityMetrics() {
+        double realized = netProfit();
+        double unrealized = openPnL();
+        double equity = initialCapital + realized + unrealized;
+
+        // Append equity and compute returns
+        if (!equitySeries.isEmpty()) {
+            double prev = equitySeries.get(equitySeries.size() - 1);
+            if (prev > 0) {
+                periodReturns.add((equity / prev) - 1.0);
+            }
+        }
+        equitySeries.add(equity);
+
+        // Init peak/trough
+        if (Double.isNaN(peakEquity)) peakEquity = equity;
+        if (Double.isNaN(troughEquity)) troughEquity = equity;
+
+        // Update peak and trough
+        if (equity > peakEquity) peakEquity = equity;
+        if (equity < troughEquity) troughEquity = equity;
+
+        // Compute current drawdown (negative fraction) and run-up (positive fraction)
+        if (peakEquity > 0) {
+            double drawdown = (equity - peakEquity) / peakEquity; // <= 0
+            if (Double.isNaN(maxDrawdownFraction) || drawdown < maxDrawdownFraction) {
+                maxDrawdownFraction = drawdown;
+            }
+        }
+        if (troughEquity > 0) {
+            double runup = (equity - troughEquity) / troughEquity; // >= 0
+            if (Double.isNaN(maxRunUpFraction) || runup > maxRunUpFraction) {
+                maxRunUpFraction = runup;
+            }
+        }
     }
 
     private void applyToPosition(Order order, Bar bar) {

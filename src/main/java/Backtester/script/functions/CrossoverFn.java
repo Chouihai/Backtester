@@ -6,11 +6,11 @@ import Backtester.objects.valueaccumulator.ValueAccumulator;
 import Backtester.objects.valueaccumulator.key.CrossoverKey;
 import Backtester.objects.valueaccumulator.key.ValueAccumulatorKey;
 import Backtester.objects.valueaccumulator.key.ValueAccumulatorKeyBuilder;
-import Backtester.script.EvaluationContext;
 import Backtester.script.functions.result.NonVoidScriptFunctionResult;
 import Backtester.script.functions.result.ScriptFunctionResult;
 import Backtester.script.statements.expressions.FunctionSignatureProperties;
 import Backtester.script.statements.expressions.Literal;
+import Backtester.strategies.RunContext;
 
 import java.util.List;
 
@@ -18,16 +18,11 @@ public class CrossoverFn implements ScriptFunction {
 
     public static final String FUNCTION_NAME = "crossover";
     public static final int EXPECTED_ARGUMENTS = 2; // valueAccumulator1, valueAccumulator2
-    private final ValueAccumulatorCache valueAccumulatorCache;
     private final ValueAccumulatorKeyBuilder valueAccumulatorKeyBuilder = new ValueAccumulatorKeyBuilder();
 
-    public CrossoverFn(ValueAccumulatorCache valueAccumulatorCache) {
-        this.valueAccumulatorCache = valueAccumulatorCache;
-    }
-
     @Override
-    public ScriptFunctionResult execute(List<Object> args, EvaluationContext context) {
-        CrossoverFnArguments fnArgs = checkArgs(args);
+    public ScriptFunctionResult execute(List<Object> args, RunContext runContext) {
+        CrossoverFnArguments fnArgs = checkArgs(args, runContext.valueAccumulatorCache);
         return new CrossoverFnResult(fnArgs.crossoverDetector());
     }
 
@@ -35,7 +30,7 @@ public class CrossoverFn implements ScriptFunction {
         return new FunctionSignatureProperties(EXPECTED_ARGUMENTS, EXPECTED_ARGUMENTS);
     }
 
-    private CrossoverFnArguments checkArgs(List<Object> args) {
+    private CrossoverFnArguments checkArgs(List<Object> args, ValueAccumulatorCache valueAccumulatorCache) {
         ValueAccumulator<Double> arg1 = ((ValueAccumulator<Double>) args.get(0));
         ValueAccumulator<Double> arg2 = ((ValueAccumulator<Double>) args.get(1));
         ValueAccumulatorKey key1 = valueAccumulatorKeyBuilder.build(arg1);

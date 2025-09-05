@@ -1,9 +1,7 @@
 package Backtester.services;
 
-import Backtester.caches.BarCache;
 import Backtester.objects.Bar;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,19 +20,29 @@ import java.util.List;
 public class DefaultHistoricalDataService implements HistoricalDataService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultHistoricalDataService.class);
-    private final BarCache barCache;
     private final ConfigurationService configService;
 
     @Inject
-    public DefaultHistoricalDataService(BarCache barCache, ConfigurationService configService) {
-        this.barCache = barCache;
+    public DefaultHistoricalDataService(ConfigurationService configService) {
         this.configService = configService;
     }
 
     @Override
-    public List<Bar> getHistoricalData(String symbol) {
-        logger.info("Fetching full historical data for {}", symbol);
-        return fetchDataFromAlphaVantage(symbol);
+    public List<Bar> getHistoricalData(String symbol, java.time.LocalDate startDate, java.time.LocalDate endDate) {
+        logger.info("Fetching historical data for {} in range {} to {}", symbol, startDate, endDate);
+        List<Bar> all = fetchDataFromAlphaVantage(symbol);
+        List<Bar> filtered = new ArrayList<>();
+        int idx = 0;
+        for (Bar b : all) {
+            if ((b.date.isEqual(startDate) || b.date.isAfter(startDate)) &&
+                (b.date.isEqual(endDate) || b.date.isBefore(endDate))) {
+                filtered.add(new Bar(idx++, b.date, b.open, b.high, b.low, b.close, b.volume));
+            }
+        }
+        if (filtered.isEmpty()) {
+            throw new RuntimeException("No data available in the selected range for " + symbol);
+        }
+        return new ArrayList<>(filtered);
     }
 
     private List<Bar> fetchDataFromAlphaVantage(String symbol) {
@@ -88,14 +96,8 @@ public class DefaultHistoricalDataService implements HistoricalDataService {
                 index++;
             }
 
-            // Load data into cache
-            // TODO: persist bars into DB later to prevent reaching API limit
-            barCache.loadCache(bars);
-
-            logger.info("Successfully fetched {} bars for {} (full available history)",
-                    bars.size(), symbol);
-
-            return new ArrayList<>(bars);
+            // Return full list; caller filters by date range
+            return bars;
 
         } catch (Exception e) {
             logger.error("Error fetching historical data for {}: {}",

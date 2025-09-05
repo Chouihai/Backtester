@@ -1,17 +1,14 @@
 package Backtester.services;
 
-import Backtester.caches.BarCache;
 import com.google.inject.Inject;
 
 public class HistoricalDataServiceFactory {
     
     private final ConfigurationService configService;
-    private final BarCache barCache;
     
     @Inject
-    public HistoricalDataServiceFactory(ConfigurationService configService, BarCache barCache) {
+    public HistoricalDataServiceFactory(ConfigurationService configService) {
         this.configService = configService;
-        this.barCache = barCache;
     }
     
     public HistoricalDataService createService() {
@@ -19,9 +16,9 @@ public class HistoricalDataServiceFactory {
         
         switch (dataSource) {
             case API:
-                return new DefaultHistoricalDataService(barCache, configService);
+                return new DefaultHistoricalDataService(configService);
             case FILE:
-                return new FileBasedHistoricalDataService(barCache, configService);
+                return new FileBasedHistoricalDataService(configService);
             default:
                 throw new IllegalStateException("Unknown data source: " + dataSource);
         }

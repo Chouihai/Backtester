@@ -1,44 +1,46 @@
 package Backtester.script.functions;
 
-import Backtester.caches.ValueAccumulatorCache;
+import Backtester.objects.Bar;
 import Backtester.objects.valueaccumulator.SmaCalculator;
-import Backtester.objects.valueaccumulator.ValueAccumulatorFactory;
-import Backtester.objects.valueaccumulator.ValueAccumulatorType;
 import Backtester.objects.valueaccumulator.key.SmaKey;
-import Backtester.script.EvaluationContext;
 import Backtester.script.functions.result.NonVoidScriptFunctionResult;
 import Backtester.script.functions.result.ScriptFunctionResult;
 import Backtester.script.statements.expressions.FunctionSignatureProperties;
 import Backtester.script.statements.expressions.Literal;
+import Backtester.strategies.RunContext;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class SmaFunction implements ScriptFunction {
 
     public static final String FUNCTION_NAME = "sma";
     public static final int EXPECTED_ARGUMENTS = 1; // days
-    private final ValueAccumulatorCache cache;
-    private final ValueAccumulatorFactory factory;
-
-    public SmaFunction(ValueAccumulatorCache cache,
-                       ValueAccumulatorFactory factory) {
-        this.cache = cache;
-        this.factory = factory;
-    }
 
     @Override
-    public ScriptFunctionResult execute(List<Object> args, EvaluationContext context) {
+    public ScriptFunctionResult execute(List<Object> args, RunContext runContext) {
         int days = getDays(args);
-
         SmaCalculator calculator;
         SmaKey key = new SmaKey(days);
-        if (cache.contains(key)) {
-            calculator = (SmaCalculator) cache.getValueAccumulator(key);
+        if (runContext.valueAccumulatorCache.contains(key)) {
+            calculator = (SmaCalculator) runContext.valueAccumulatorCache.getValueAccumulator(key);
         } else {
-            calculator = (SmaCalculator) factory.create(ValueAccumulatorType.SMA, days, context.currentBarIndex());
-            cache.put(key, calculator);
+            List<Bar> initialValues = getLastNDays(runContext.bars, days, runContext.currentIndex);
+            calculator = new SmaCalculator(days, initialValues);
+            runContext.valueAccumulatorCache.put(key, calculator);
         }
         return new SmaFunctionResult(calculator);
+    }
+
+    public List<Bar> getLastNDays(List<Bar> bars, int days, int index) {
+        if (days > index + 1) {
+            throw new RuntimeException("Can't look back further than specified interval");
+        }
+        List <Bar> result = new LinkedList<>();
+        for (int i = index + 1 - days;  i <= index; i++) {
+            result.add(bars.get(i));
+        }
+        return result;
     }
 
     public static FunctionSignatureProperties getSignatureProperties() {

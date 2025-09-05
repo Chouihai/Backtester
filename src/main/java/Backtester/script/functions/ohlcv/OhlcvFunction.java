@@ -1,30 +1,21 @@
 package Backtester.script.functions.ohlcv;
 
-import Backtester.caches.BarCache;
 import Backtester.caches.ValueAccumulatorCache;
 import Backtester.objects.valueaccumulator.OhlcvField;
 import Backtester.objects.valueaccumulator.OhlcvValueAccumulator;
 import Backtester.objects.valueaccumulator.key.OhlcvKey;
-import Backtester.script.EvaluationContext;
 import Backtester.script.functions.ScriptFunction;
 import Backtester.script.functions.result.NonVoidScriptFunctionResult;
 import Backtester.script.functions.result.ScriptFunctionResult;
 import Backtester.script.statements.expressions.FunctionSignatureProperties;
 import Backtester.script.statements.expressions.Literal;
+import Backtester.strategies.RunContext;
 
 import java.util.List;
 
 public abstract class OhlcvFunction implements ScriptFunction {
-
-    private final BarCache barCache;
-    private final ValueAccumulatorCache cache;
     public static final int MINIMUM_ARGUMENTS = 0;
     public static final int MAXIMUM_ARGUMENTS = 1;
-
-    public OhlcvFunction(ValueAccumulatorCache cache, BarCache barCache) {
-        this.cache = cache;
-        this.barCache = barCache;
-    }
 
     public abstract OhlcvField getField();
 
@@ -34,16 +25,17 @@ public abstract class OhlcvFunction implements ScriptFunction {
         return new FunctionSignatureProperties(MINIMUM_ARGUMENTS, MAXIMUM_ARGUMENTS);
     }
 
-    public ScriptFunctionResult execute(List<Object> args, EvaluationContext context) {
+    public ScriptFunctionResult execute(List<Object> args, RunContext runContext) {
         int lookback = parseLookback(args);
 
         OhlcvKey key = new OhlcvKey(getField(), lookback);
 
         OhlcvValueAccumulator accumulator;
+        ValueAccumulatorCache cache = runContext.valueAccumulatorCache;
         if (cache.contains(key)) {
             accumulator = (OhlcvValueAccumulator) cache.getValueAccumulator(key);
         } else {
-            accumulator = new OhlcvValueAccumulator(getField(), lookback, barCache, context.currentBarIndex());
+            accumulator = new OhlcvValueAccumulator(getField(), lookback, runContext.bars, runContext.currentIndex);
             cache.put(key, accumulator);
         }
 

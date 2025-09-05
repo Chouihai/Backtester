@@ -2,8 +2,6 @@ package Backtester.ui;
 
 import Backtester.AppModule;
 import Backtester.services.HistoricalDataService;
-import Backtester.strategies.StrategyRunner;
-import Backtester.trades.PositionManager;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import javafx.application.Application;
@@ -29,11 +27,9 @@ public class BacktesterApplication extends Application {
         
         // Get services from dependency injection
         HistoricalDataService historicalDataService = injector.getInstance(HistoricalDataService.class);
-        StrategyRunner strategyRunner = injector.getInstance(StrategyRunner.class);
-        PositionManager positionManager = injector.getInstance(PositionManager.class);
         
         // Create controller with injected services
-        controller = new BacktesterController(historicalDataService, strategyRunner, positionManager);
+        controller = new BacktesterController(historicalDataService);
         
         // Create the UI using the controller
         Parent root = createUI();

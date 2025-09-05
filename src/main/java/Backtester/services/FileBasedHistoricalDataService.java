@@ -1,6 +1,5 @@
 package Backtester.services;
 
-import Backtester.caches.BarCache;
 import Backtester.objects.Bar;
 import com.google.inject.Inject;
 import org.json.JSONArray;
@@ -25,19 +24,29 @@ import java.util.List;
 public class FileBasedHistoricalDataService implements HistoricalDataService {
 
     private static final Logger logger = LoggerFactory.getLogger(FileBasedHistoricalDataService.class);
-    private final BarCache barCache;
     private final ConfigurationService configService;
 
     @Inject
-    public FileBasedHistoricalDataService(BarCache barCache, ConfigurationService configService) {
-        this.barCache = barCache;
+    public FileBasedHistoricalDataService(ConfigurationService configService) {
         this.configService = configService;
     }
 
     @Override
-    public List<Bar> getHistoricalData(String symbol) {
-        logger.info("Loading historical data for {} from file", symbol);
-        return loadDataFromFile(symbol);
+    public List<Bar> getHistoricalData(String symbol, java.time.LocalDate startDate, java.time.LocalDate endDate) {
+        logger.info("Loading historical data for {} from file in range {} to {}", symbol, startDate, endDate);
+        List<Bar> all = loadDataFromFile(symbol);
+        List<Bar> filtered = new ArrayList<>();
+        int idx = 0;
+        for (Bar b: all) {
+            if ((b.date.isEqual(startDate) || b.date.isAfter(startDate)) &&
+                (b.date.isEqual(endDate) || b.date.isBefore(endDate))) {
+                filtered.add(new Bar(idx++, b.date, b.open, b.high, b.low, b.close, b.volume));
+            }
+        }
+        if (filtered.isEmpty()) {
+            throw new RuntimeException("No data available in the selected range for " + symbol);
+        }
+        return new ArrayList<>(filtered);
     }
 
     private List<Bar> loadDataFromFile(String symbol) {
@@ -62,14 +71,8 @@ public class FileBasedHistoricalDataService implements HistoricalDataService {
             // Sort bars by date
             bars.sort(Comparator.comparing(bar -> bar.date));
 
-            // Load data into cache
-            barCache.loadCache(bars);
-
-            String filePath = configService.getFilePath();
-            logger.info("Successfully loaded {} bars for {} from file: {}",
-                    bars.size(), symbol, filePath);
-
-            return new ArrayList<>(bars);
+            // Return all parsed bars; caller filters
+            return bars;
 
         } catch (Exception e) {
             logger.error("Error loading historical data for {} from file: {}",

@@ -5,7 +5,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -30,11 +29,12 @@ public class BacktesterUI {
         // 2. Strategy Editor Section
         VBox strategySection = createStrategySection();
 
-        // 3. Chart Section (placeholder)
-//        VBox chartSection = createChartSection();
+        // 3. Chart Section
+        VBox chartSection = createChartSection();
         
         // 4. Performance Metrics Section
         VBox performanceSection = createPerformanceSection();
+        VBox mcSection = createMonteCarloSection();
         
         // 5. Trade History Section
         VBox tradeHistorySection = createTradeHistorySection();
@@ -43,8 +43,9 @@ public class BacktesterUI {
         mainLayout.getChildren().addAll(
             strategySection,
             inputSection,
-//            chartSection,
+            chartSection,
             performanceSection,
+            mcSection,
             tradeHistorySection
         );
         
@@ -101,6 +102,21 @@ public class BacktesterUI {
         capitalField.setPrefWidth(150);
         capitalField.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
         
+        // Monte Carlo inputs
+        Label permutationsLabel = new Label("Permutations:");
+        permutationsLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+        TextField permutationsField = new TextField();
+        permutationsField.setPromptText("e.g., 100");
+        permutationsField.setPrefWidth(120);
+        permutationsField.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+
+        Label blockSizeLabel = new Label("Block Size:");
+        blockSizeLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+        TextField blockSizeField = new TextField();
+        blockSizeField.setPromptText("e.g., 10");
+        blockSizeField.setPrefWidth(120);
+        blockSizeField.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+
         // Control buttons
         Button runButton = new Button("Run Backtest");
         runButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;");
@@ -133,7 +149,12 @@ public class BacktesterUI {
         grid.add(capitalLabel, 2, 1);
         grid.add(capitalField, 3, 1);
         
-        grid.add(buttonBox, 0, 2, 4, 1);
+        grid.add(permutationsLabel, 0, 2);
+        grid.add(permutationsField, 1, 2);
+        grid.add(blockSizeLabel, 2, 2);
+        grid.add(blockSizeField, 3, 2);
+
+        grid.add(buttonBox, 0, 3, 4, 1);
         
         // Connect to controller
         controller.symbolField = securityField;
@@ -144,6 +165,8 @@ public class BacktesterUI {
         controller.stopButton = stopButton;
         controller.progressBar = progressBar;
         controller.statusLabel = statusLabel;
+        controller.permutationsField = permutationsField;
+        controller.blockSizeField = blockSizeField;
         
         section.getChildren().addAll(title, grid);
         return section;
@@ -179,31 +202,28 @@ public class BacktesterUI {
         return section;
     }
 
-//    private VBox createChartSection() {
-//        VBox section = new VBox(10);
-//        section.setPadding(new Insets(10));
-//        section.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
-//
-//        Label title = new Label("Price Chart & Strategy Performance");
-//        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333;");
-//
-//        // Placeholder for chart
-//        VBox chartContainer = new VBox();
-//        chartContainer.setPrefHeight(300);
-//        chartContainer.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dee2e6; -fx-border-style: dashed;");
-//        chartContainer.setAlignment(Pos.CENTER);
-//
-//        Label placeholderLabel = new Label("Chart will be displayed here");
-//        placeholderLabel.setStyle("-fx-text-fill: #6c757d; -fx-font-size: 14px;");
-//
-//        chartContainer.getChildren().add(placeholderLabel);
-//
-//        // Connect to controller
-//        controller.chartContainer = chartContainer;
-//
-//        section.getChildren().addAll(title, chartContainer);
-//        return section;
-//    }
+    private VBox createChartSection() {
+        VBox section = new VBox(10);
+        section.setPadding(new Insets(10));
+        section.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
+
+        Label title = new Label("Equity Curve");
+        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333;");
+
+        VBox chartContainer = new VBox();
+        chartContainer.setMinHeight(320);
+        chartContainer.setPrefHeight(320);
+        chartContainer.setMaxHeight(320);
+        // Inner container should be plain to avoid double borders/boxes
+        chartContainer.setStyle("-fx-background-color: transparent;");
+        chartContainer.setAlignment(Pos.CENTER);
+
+        // Connect to controller
+        controller.chartContainer = chartContainer;
+
+        section.getChildren().addAll(title, chartContainer);
+        return section;
+    }
 
     private VBox createPerformanceSection() {
         VBox section = new VBox(10);
@@ -288,8 +308,70 @@ public class BacktesterUI {
         controller.maxDrawdownLabel = maxDrawdownValue;
         controller.maxRunUpLabel = maxRunUpValue;
         controller.sharpeRatioLabel = sharpeRatioValue;
-        
+
         section.getChildren().addAll(title, metricsGrid);
+        return section;
+    }
+
+    private VBox createMonteCarloSection() {
+        VBox section = new VBox(10);
+        section.setPadding(new Insets(10));
+        section.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
+
+        Label title = new Label("Monte Carlo Averages");
+        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333;");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(20);
+        grid.setVgap(10);
+        grid.setAlignment(Pos.CENTER_LEFT);
+
+        Label mcNetLbl = new Label("Avg Net Profit:");
+        Label mcNetVal = new Label("$0.00");
+
+        Label mcDdLbl = new Label("Avg Max Drawdown:");
+        Label mcDdVal = new Label("0.00%");
+
+        Label mcSharpeLbl = new Label("Avg Sharpe:");
+        Label mcSharpeVal = new Label("0.00");
+
+        Label mcEntriesLbl = new Label("Avg Entries:");
+        Label mcEntriesVal = new Label("0");
+
+        Label mcOpenLbl = new Label("Avg Open Trades:");
+        Label mcOpenVal = new Label("0");
+
+        Label mcClosedLbl = new Label("Avg Closed Trades:");
+        Label mcClosedVal = new Label("0");
+
+        Label mcWinnersLbl = new Label("Avg Winners:");
+        Label mcWinnersVal = new Label("0");
+
+        Label mcLosersLbl = new Label("Avg Losers:");
+        Label mcLosersVal = new Label("0");
+
+        grid.add(mcNetLbl, 0, 0); grid.add(mcNetVal, 1, 0);
+        grid.add(mcDdLbl, 2, 0); grid.add(mcDdVal, 3, 0);
+        grid.add(mcSharpeLbl, 4, 0); grid.add(mcSharpeVal, 5, 0);
+
+        grid.add(mcEntriesLbl, 0, 1); grid.add(mcEntriesVal, 1, 1);
+        grid.add(mcOpenLbl, 2, 1); grid.add(mcOpenVal, 3, 1);
+        grid.add(mcClosedLbl, 4, 1); grid.add(mcClosedVal, 5, 1);
+
+        grid.add(mcWinnersLbl, 0, 2); grid.add(mcWinnersVal, 1, 2);
+        grid.add(mcLosersLbl, 2, 2); grid.add(mcLosersVal, 3, 2);
+
+        // Wire labels to controller
+        controller.mcNetProfitLabel = mcNetVal;
+        controller.mcMaxDrawdownLabel = mcDdVal;
+        controller.mcSharpeLabel = mcSharpeVal;
+        controller.mcEntriesLabel = mcEntriesVal;
+        controller.mcOpenTradesLabel = mcOpenVal;
+        controller.mcClosedTradesLabel = mcClosedVal;
+        controller.mcWinnersLabel = mcWinnersVal;
+        controller.mcLosersLabel = mcLosersVal;
+
+        section.getChildren().addAll(title, grid);
         return section;
     }
 
@@ -389,7 +471,7 @@ public class BacktesterUI {
         pnlCol.setCellValueFactory(data -> {
             Trade trade = data.getValue();
             if (trade.isOpen()) {
-                return new javafx.beans.property.SimpleDoubleProperty(controller.openPnl(trade)).asObject();
+                return new javafx.beans.property.SimpleDoubleProperty(trade.openPnL(controller.lastBar)).asObject();
             } else {
                 return new javafx.beans.property.SimpleDoubleProperty(trade.profit()).asObject();
             }
