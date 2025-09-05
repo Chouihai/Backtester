@@ -37,7 +37,7 @@ public class StrategyRunner {
         this.logger = logger;
     }
 
-    public void run(String strategy, LocalDate startDate, LocalDate endDate) {
+    public void run(String strategy, LocalDate startDate, LocalDate endDate, int permutations) {
         int initialIndex = barCache.findIndexAfterDate(startDate);
         int endIndex = barCache.findIndexBeforeDate(endDate);
         logger.info("About to start running strategy starting at index " + initialIndex + " and ending at index " + endIndex);

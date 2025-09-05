@@ -159,7 +159,7 @@ public class BacktesterController {
 
             if (!strategyScript.trim().isEmpty()) {
                 try {
-                    strategyRunner.run(strategyScript, startDate, endDate);
+                    strategyRunner.run(strategyScript, startDate, endDate, 100);
                 } catch (Exception e) {
                     throw new RuntimeException("Strategy parsing failed: " + e.getMessage());
                 }
