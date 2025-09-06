@@ -10,23 +10,25 @@ import java.util.List;
 
 public class RunContext {
 
-    public PositionManager positionManager;
-    public OrderCache orderCache;
-    public List<Bar> bars;
-    public ValueAccumulatorCache valueAccumulatorCache;
+    final public PositionManager positionManager;
+    final public OrderCache orderCache;
+    final public List<Bar> bars;
+    final public List<Bar> lookbackBars;
+    final public ValueAccumulatorCache valueAccumulatorCache;
     public int currentIndex;
 
-    public RunContext(List<Bar> bars) {
+    public RunContext(List<Bar> bars, List<Bar> lookbackBars) {
         orderCache = new InMemoryOrderCache();
         positionManager = new PositionManager(orderCache);
         valueAccumulatorCache = new ValueAccumulatorCache();
         this.bars = bars;
         this.currentIndex = 0;
+        this.lookbackBars = lookbackBars;
     }
 
     public void roll(Bar bar) {
-        currentIndex = bar.index;
-        positionManager.roll(bar);
+        currentIndex++;
         valueAccumulatorCache.roll(bar);
+        positionManager.roll(bar);
     }
 }

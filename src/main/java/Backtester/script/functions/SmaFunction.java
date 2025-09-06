@@ -25,7 +25,7 @@ public class SmaFunction implements ScriptFunction {
         if (runContext.valueAccumulatorCache.contains(key)) {
             calculator = (SmaCalculator) runContext.valueAccumulatorCache.getValueAccumulator(key);
         } else {
-            List<Bar> initialValues = getLastNDays(runContext.bars, days, runContext.currentIndex);
+            List<Bar> initialValues = runContext.lookbackBars;
             calculator = new SmaCalculator(days, initialValues);
             runContext.valueAccumulatorCache.put(key, calculator);
         }

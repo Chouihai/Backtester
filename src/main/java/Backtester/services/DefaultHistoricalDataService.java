@@ -27,8 +27,9 @@ public class DefaultHistoricalDataService implements HistoricalDataService {
         this.configService = configService;
     }
 
+    // TODO Lot of similarities in this method and file one
     @Override
-    public List<Bar> getHistoricalData(String symbol, java.time.LocalDate startDate, java.time.LocalDate endDate) {
+    public List<Bar> getHistoricalData(String symbol, LocalDate startDate, LocalDate endDate) {
         logger.info("Fetching historical data for {} in range {} to {}", symbol, startDate, endDate);
         List<Bar> all = fetchDataFromAlphaVantage(symbol);
         List<Bar> filtered = new ArrayList<>();

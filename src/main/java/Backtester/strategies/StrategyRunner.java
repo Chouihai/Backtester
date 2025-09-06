@@ -17,19 +17,20 @@ public class StrategyRunner {
     private final RunContext runContext;
 
     public StrategyRunner(List<Bar> bars,
+                          List<Bar> lookbackBars,
                           String script,
                           Logger logger) {
         this.bars = bars;
         this.logger = logger;
+        this.runContext = new RunContext(bars, lookbackBars);
         this.evaluator = new ScriptEvaluator(script);
-        this.runContext = new RunContext(bars);
     }
 
     public RunResult run(double initialCapital) {
         int n = bars.size();
         logger.info("Running strategy across " + n  + " cached bars");
-        evaluator.evaluate(runContext);
-        for (int i = 1; i < n; i++) {
+        evaluator.evaluate(runContext); // This is necessary, can't remember why but not to be touched
+        for (int i = 0; i < n; i++) {
             Bar bar = bars.get(i);
             roll(bar);
 
@@ -48,7 +49,7 @@ public class StrategyRunner {
      * First we run anything we need to at open (Fill orders)
      * Then we run the script... I think
      */
-    public void roll(Bar bar) {
+    private void roll(Bar bar) {
         runContext.roll(bar);
         evaluator.evaluate(runContext);
     }

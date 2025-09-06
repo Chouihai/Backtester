@@ -167,6 +167,7 @@ public class BacktesterController {
             String strategyScript = strategyTextArea.getText();
 
             Platform.runLater(() -> statusLabel.setText("Fetching data for " + symbol + "..."));
+            List<Bar> lookbackBars = historicalDataService.getHistoricalData(symbol, startDate.minusDays(100), startDate);
             List<Bar> bars = historicalDataService.getHistoricalData(symbol, startDate, endDate);
             logger.info("Fetched {} bars for {} within selected range.", bars.size(), symbol);
 
@@ -188,7 +189,7 @@ public class BacktesterController {
             RunResult results = null;
             if (!strategyScript.trim().isEmpty()) {
                 try {
-                    StrategyRunner strategyRunner = new StrategyRunner(bars, strategyScript, logger);
+                    StrategyRunner strategyRunner = new StrategyRunner(bars, lookbackBars, strategyScript, logger);
                     results = strategyRunner.run(initialCapital);
                 } catch (Exception e) {
                     throw new RuntimeException("Strategy parsing failed: " + e.getMessage());

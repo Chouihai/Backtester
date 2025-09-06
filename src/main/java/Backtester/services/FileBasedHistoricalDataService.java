@@ -32,7 +32,7 @@ public class FileBasedHistoricalDataService implements HistoricalDataService {
     }
 
     @Override
-    public List<Bar> getHistoricalData(String symbol, java.time.LocalDate startDate, java.time.LocalDate endDate) {
+    public List<Bar> getHistoricalData(String symbol, LocalDate startDate, LocalDate endDate) {
         logger.info("Loading historical data for {} from file in range {} to {}", symbol, startDate, endDate);
         List<Bar> all = loadDataFromFile(symbol);
         List<Bar> filtered = new ArrayList<>();
