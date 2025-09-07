@@ -5,7 +5,6 @@ import Backtester.script.ScriptEvaluator;
 import Backtester.trades.PositionManager;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class StrategyRunner {
@@ -13,8 +12,7 @@ public class StrategyRunner {
     private final ScriptEvaluator evaluator;
     private final List<Bar> bars;
     private final Logger logger;
-    private final List<Double> strategyEquity = new ArrayList<>();
-    private final RunContext runContext;
+        private final RunContext runContext;
 
     public StrategyRunner(List<Bar> bars,
                           List<Bar> lookbackBars,
@@ -37,8 +35,8 @@ public class StrategyRunner {
         PositionManager pm = runContext.positionManager;
         
         List<Double> equity = pm.getEquitySeries();
-        strategyEquity.clear();
-        strategyEquity.addAll(equity);
+        double[] equityArr = new double[equity.size()];
+        for (int i = 0; i < equity.size(); i++) equityArr[i] = equity.get(i);
 
         double years = 0.0;
         if (!bars.isEmpty()) {
@@ -62,7 +60,7 @@ public class StrategyRunner {
                 pm.maxDrawdown(),
                 pm.maxRunUp(),
                 runContext.bars.getLast(),
-                strategyEquity
+                equityArr
         );
     }
 
@@ -75,3 +73,8 @@ public class StrategyRunner {
         evaluator.evaluate(runContext);
     }
 }
+
+
+
+
+

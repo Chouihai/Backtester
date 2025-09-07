@@ -216,14 +216,14 @@ public class BacktesterController {
                         threads);
                 Platform.runLater(() -> {
                     if (mcTitleLabel != null) {
-                        mcTitleLabel.setText("Monte Carlo Metrics");
+                        mcTitleLabel.setText("Randomized Permutations Metrics");
                     }
                     updateMonteCarloResults(mc);
                     // Overlay MC mean on the main equity chart
                     if (chartManager != null) {
                         chartManager.overlayMonteCarlo(mc, lastDates, null, buyAndHoldEquity);
                     }
-                    statusLabel.setText("Monte Carlo completed");
+                    statusLabel.setText("Randomized permutation testing completed");
                     resetUI();
                 });
             } else {
@@ -345,7 +345,7 @@ public class BacktesterController {
 
     private void updateChart(RunResult result, List<LocalDate> dates, List<Double> buyAndHold) {
         if (chartManager == null) return;
-        var strat = result.strategyEquity();
+        double[] strat = result.strategyEquity();
         chartManager.updateEquity(dates, strat, buyAndHold);
     }
 
@@ -384,4 +384,7 @@ public class BacktesterController {
         executorService.shutdown();
     }
 }
+
+
+
 

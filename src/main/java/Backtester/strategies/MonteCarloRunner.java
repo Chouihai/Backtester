@@ -4,7 +4,7 @@ import Backtester.objects.Bar;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
@@ -50,7 +50,7 @@ public class MonteCarloRunner {
                                 double initialCapital) {
         if (permutations <= 0) {
             return new MonteCarloResult(0, java.util.Collections.emptyMap(), 0.0, 0.0,
-                    new double[0], new double[0], new double[0], new double[0], new double[0], new double[0]);
+                    new double[0]);
         }
 
         ExecutorService pool = Executors.newFixedThreadPool(Math.max(1, threads));
@@ -62,36 +62,42 @@ public class MonteCarloRunner {
                 futures.add(pool.submit(task(seed, initialCapital)));
             }
 
-            List<Double> netProfits = new ArrayList<>(permutations);
-            List<Double> totalPnls = new ArrayList<>(permutations); // closed + open
-            List<Double> drawdowns = new ArrayList<>(permutations);
-            List<Double> sharpes = new ArrayList<>(permutations);
-            List<Double> tradesCounts = new ArrayList<>(permutations);
-            List<Double> cagrs = new ArrayList<>(permutations);
-            List<Double> calmars = new ArrayList<>(permutations);
-            List<Double> sortinos = new ArrayList<>(permutations);
-            List<Double> vols = new ArrayList<>(permutations);
-            List<double[]> equityCurves = new ArrayList<>(permutations);
+            double[] netProfits = new double[permutations];
+            double[] totalPnls = new double[permutations]; // closed + open
+            double[] drawdowns = new double[permutations];
+            double[] sharpes = new double[permutations];
+            double[] tradesCounts = new double[permutations];
+            double[] cagrs = new double[permutations];
+            double[] calmars = new double[permutations];
+            double[] sortinos = new double[permutations];
+            double[] vols = new double[permutations];
+            // Running mean for equity across permutations
+            double[] sumEq = null;
 
+            int idx = 0;
             for (Future<Outcome> f : futures) {
                 Outcome oc = f.get();
                 RunResult rr = oc.result;
-                equityCurves.add(toPrimitive(rr.strategyEquity()));
+                double[] eq = rr.strategyEquity();
+                if (sumEq == null) {
+                    sumEq = new double[eq.length];
+                }
+                int len = Math.min(sumEq.length, eq.length);
+                for (int i = 0; i < len; i++) sumEq[i] += eq[i];
 
                 double net = rr.netProfit();
-                netProfits.add(net);
-                double totalPnl = net + rr.openPnL();
-                totalPnls.add(totalPnl);
-                drawdowns.add(rr.maxDrawdown());
-                sharpes.add(rr.sharpe());
+                netProfits[idx] = net;
+                totalPnls[idx] = net + rr.openPnL();
+                drawdowns[idx] = rr.maxDrawdown();
+                sharpes[idx] = rr.sharpe();
 
-                int entries = rr.trades().size();
-                tradesCounts.add((double) entries);
+                tradesCounts[idx] = rr.trades().size();
 
-                cagrs.add(rr.cagr());
-                calmars.add(rr.calmar());
-                vols.add(rr.volatility());
-                sortinos.add(rr.sortino());
+                cagrs[idx] = rr.cagr();
+                calmars[idx] = rr.calmar();
+                vols[idx] = rr.volatility();
+                sortinos[idx] = rr.sortino();
+                idx++;
             }
 
             java.util.Map<String, StatSummary> summaries = new java.util.LinkedHashMap<>();
@@ -106,12 +112,17 @@ public class MonteCarloRunner {
             summaries.put("Sortino", summarize(sortinos));
 
             int p = permutations;
-            double probLoss = (double) netProfits.stream().filter(v -> v < 0).count() / p;
+            int losses = 0; for (double v : netProfits) if (v < 0) losses++; double probLoss = (double) losses / p;
             double es5 = expectedShortfall(netProfits, 0.05);
 
-            double[][] bands = computeEquityBands(equityCurves);
-            return new MonteCarloResult(p, summaries, probLoss, es5,
-                    bands[0], bands[1], bands[2], bands[3], bands[4], bands[5]);
+            double[] meanEq;
+            if (sumEq == null) {
+                meanEq = new double[0];
+            } else {
+                meanEq = new double[sumEq.length];
+                for (int i = 0; i < sumEq.length; i++) meanEq[i] = sumEq[i] / p;
+            }
+            return new MonteCarloResult(p, summaries, probLoss, es5, meanEq);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Monte Carlo run interrupted", e);
@@ -141,52 +152,19 @@ public class MonteCarloRunner {
         }
     }
 
-    private static StatSummary summarize(List<Double> values) {
-        if (values.isEmpty()) return new StatSummary(0, 0, 0, 0, 0, 0);
-        List<Double> sorted = new java.util.ArrayList<>(values);
-        Collections.sort(sorted);
-        double mean = sorted.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+    private static StatSummary summarize(double[] values) {
+        if (values.length == 0) return new StatSummary(0, 0, 0, 0, 0, 0);
+        double[] sorted = Arrays.copyOf(values, values.length);
+        Arrays.sort(sorted);
+        double sum = 0.0;
+        for (double v : sorted) sum += v;
+        double mean = sum / sorted.length;
         double median = percentile(sorted, 0.5);
         double p5 = percentile(sorted, 0.05);
         double p25 = percentile(sorted, 0.25);
         double p75 = percentile(sorted, 0.75);
         double p95 = percentile(sorted, 0.95);
         return new StatSummary(mean, median, p5, p25, p75, p95);
-    }
-
-    private static double[] toPrimitive(List<Double> list) {
-        double[] arr = new double[list.size()];
-        for (int i = 0; i < list.size(); i++) arr[i] = list.get(i);
-        return arr;
-    }
-
-    // Returns {mean, p5, p25, p50, p75, p95} as arrays over time
-    private static double[][] computeEquityBands(List<double[]> curves) {
-        if (curves.isEmpty()) return new double[][]{new double[0],new double[0],new double[0],new double[0],new double[0],new double[0]};
-        int n = curves.get(0).length;
-        double[] mean = new double[n];
-        double[] p5 = new double[n];
-        double[] p25 = new double[n];
-        double[] p50 = new double[n];
-        double[] p75 = new double[n];
-        double[] p95 = new double[n];
-        double[] col = new double[curves.size()];
-        for (int t = 0; t < n; t++) {
-            double sum = 0.0;
-            for (int i = 0; i < curves.size(); i++) {
-                double v = curves.get(i)[t];
-                col[i] = v;
-                sum += v;
-            }
-            mean[t] = sum / curves.size();
-            java.util.Arrays.sort(col);
-            p5[t] = interp(col, 0.05);
-            p25[t] = interp(col, 0.25);
-            p50[t] = interp(col, 0.50);
-            p75[t] = interp(col, 0.75);
-            p95[t] = interp(col, 0.95);
-        }
-        return new double[][]{mean, p5, p25, p50, p75, p95};
     }
 
     private static double interp(double[] sorted, double q) {
@@ -198,22 +176,28 @@ public class MonteCarloRunner {
         return sorted[i] * (1 - w) + sorted[j] * w;
     }
 
-    private static double percentile(List<Double> sortedAsc, double q) {
-        if (sortedAsc.isEmpty()) return 0.0;
-        double pos = q * (sortedAsc.size() - 1);
+    private static double percentile(double[] sortedAsc, double q) {
+        if (sortedAsc.length == 0) return 0.0;
+        double pos = q * (sortedAsc.length - 1);
         int i = (int) Math.floor(pos);
-        int j = Math.min(sortedAsc.size() - 1, i + 1);
+        int j = Math.min(sortedAsc.length - 1, i + 1);
         double w = pos - i;
-        return sortedAsc.get(i) * (1 - w) + sortedAsc.get(j) * w;
+        return sortedAsc[i] * (1 - w) + sortedAsc[j] * w;
     }
 
-    private static double expectedShortfall(java.util.List<Double> values, double alpha) {
-        if (values.isEmpty()) return 0.0;
-        List<Double> sorted = new ArrayList<>(values);
-        Collections.sort(sorted);
-        int cutoff = Math.max(1, (int) Math.floor(alpha * sorted.size()));
+    private static double expectedShortfall(double[] values, double alpha) {
+        if (values.length == 0) return 0.0;
+        double[] sorted = Arrays.copyOf(values, values.length);
+        Arrays.sort(sorted);
+        int cutoff = Math.max(1, (int) Math.floor(alpha * sorted.length));
         double sum = 0.0;
-        for (int i = 0; i < cutoff; i++) sum += sorted.get(i);
+        for (int i = 0; i < cutoff; i++) sum += sorted[i];
         return sum / cutoff;
     }
 }
+
+
+
+
+
+

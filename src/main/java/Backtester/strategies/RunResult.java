@@ -18,5 +18,6 @@ public record RunResult(List<Trade> trades,
                         double maxDrawdown,
                         double maxRunup,
                         Bar lastBar,
-                        List<Double> strategyEquity) {
+                        double[] strategyEquity) {
 }
+

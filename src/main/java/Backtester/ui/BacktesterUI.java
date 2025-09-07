@@ -331,7 +331,7 @@ public class BacktesterUI {
         section.setPadding(new Insets(10));
         section.getStyleClass().add("card");
 
-        Label title = new Label("Monte Carlo Metrics");
+        Label title = new Label("Randomized Permutations Metrics");
         title.getStyleClass().add("title");
 
         // Build a table of metric summaries (Mean, Median, P5, P25, P75, P95)
@@ -506,3 +506,4 @@ public class BacktesterUI {
         return section;
     }
 }
+
