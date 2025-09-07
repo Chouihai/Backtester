@@ -7,6 +7,7 @@ import com.google.inject.Injector;
 import javafx.application.Application;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 public class BacktesterApplication extends Application {
@@ -17,24 +18,25 @@ public class BacktesterApplication extends Application {
     @Override
     public void init() throws Exception {
         super.init();
-        // Initialize dependency injection
         injector = Guice.createInjector(new AppModule());
     }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         primaryStage.setTitle("Backtester - Stock Trading Strategy Backtester");
-        
-        // Get services from dependency injection
+
         HistoricalDataService historicalDataService = injector.getInstance(HistoricalDataService.class);
-        
-        // Create controller with injected services
         controller = new BacktesterController(historicalDataService);
-        
-        // Create the UI using the controller
+
         Parent root = createUI();
-        
-        Scene scene = new Scene(root, 1200, 800);
+        Scene scene = new Scene(root, 1200, 800);        scene.setFill(Color.web("#0e1117"));
+        try {
+            var cssUrl = getClass().getResource("/Backtester/ui/dark_theme.css");
+            if (cssUrl != null) {
+                scene.getStylesheets().add(cssUrl.toExternalForm());
+            }
+
+        } catch (Exception ignore) {}
         primaryStage.setScene(scene);
         primaryStage.setMinWidth(800);
         primaryStage.setMinHeight(600);
@@ -42,7 +44,6 @@ public class BacktesterApplication extends Application {
     }
 
     private Parent createUI() {
-        // Create the UI layout and inject the controller
         BacktesterUI backtesterUI = new BacktesterUI(controller);
         return backtesterUI.createUI();
     }
@@ -50,12 +51,8 @@ public class BacktesterApplication extends Application {
     @Override
     public void stop() throws Exception {
         super.stop();
-        if (controller != null) {
-            controller.shutdown();
-        }
+        if (controller != null) controller.shutdown();
     }
 
-    public static void main(String[] args) {
-        launch(args);
-    }
-} 
+    public static void main(String[] args) { launch(args); }
+}

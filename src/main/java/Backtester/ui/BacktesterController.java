@@ -18,6 +18,7 @@ import javafx.scene.web.WebView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,7 @@ public class BacktesterController {
     public DatePicker startDatePicker;
     public DatePicker endDatePicker;
     public TextField initialCapitalField;
-    public TextArea strategyTextArea;
+    public CodeMirrorStrategyEditor cmEditor;
     public Button runButton;
     public Button stopButton;
     public VBox chartContainer;
@@ -80,23 +81,21 @@ public class BacktesterController {
 
     private void setupUI() {
         // Default inputs
-        startDatePicker.setValue(LocalDate.of(2024, 3, 14));
-        endDatePicker.setValue(LocalDate.of(2025, 5, 1));
+        startDatePicker.setValue(LocalDate.of(2010, 1, 1));
+        endDatePicker.setValue(LocalDate.of(2025, 1, 1));
         if (symbolField != null) {
             symbolField.setText("AAPL");
         }
-        if (strategyTextArea != null) {
-            String defaultStrategy = """
-                    sma20 = sma(20)
-                    sma50 = sma(50)
+        String defaultStrategy = """
+                sma20 = sma(20)
+                sma50 = sma(50)
 
-                    if (crossover(sma20, sma50)):
-                        createOrder("long", true, 1000)
-                    if (crossover(sma50, sma20)):
-                        createOrder("position1", false, 1000)
-                    """;
-            strategyTextArea.setText(defaultStrategy);
-        }
+                if (crossover(sma20, sma50)):
+                    createOrder("long", true, 1000)
+                if (crossover(sma50, sma20)):
+                    createOrder("position1", false, 1000)
+                """;
+        if (cmEditor != null) { cmEditor.setText(defaultStrategy); }
         initialCapitalField.setText("100000");
         if (permutationsField != null) permutationsField.setText("100");
         tradesTable.setItems(tradesData);
@@ -128,9 +127,11 @@ public class BacktesterController {
             return;
         }
 
+        final String strategyScriptSnapshot = getStrategyScript();
+
         CompletableFuture.runAsync(() -> {
             try {
-                runBacktestAsync();
+                runBacktestAsync(strategyScriptSnapshot);
             } catch (Exception e) {
                 logger.error("Backtest failed", e);
                 Platform.runLater(() -> {
@@ -141,7 +142,7 @@ public class BacktesterController {
         }, executorService);
     }
 
-    private void runBacktestAsync() {
+    private void runBacktestAsync(String strategyScript) {
         Platform.runLater(() -> {
             isRunning = true;
             runButton.setDisable(true);
@@ -155,8 +156,6 @@ public class BacktesterController {
             LocalDate startDate = startDatePicker.getValue();
             LocalDate endDate = endDatePicker.getValue();
             double initialCapital = Double.parseDouble(initialCapitalField.getText()); // Nothing will be done with initial capital for now
-            String strategyScript = strategyTextArea.getText();
-
             Platform.runLater(() -> statusLabel.setText("Fetching data for " + symbol + "..."));
             List<Bar> lookbackBars = historicalDataService.getHistoricalData(symbol, startDate.minusDays(100), startDate);
             List<Bar> bars = historicalDataService.getHistoricalData(symbol, startDate, endDate);
@@ -180,8 +179,12 @@ public class BacktesterController {
             RunResult results = null;
             if (!strategyScript.trim().isEmpty()) {
                 try {
+                    long baseStartNs = System.nanoTime();
                     StrategyRunner strategyRunner = new StrategyRunner(bars, lookbackBars, strategyScript, logger);
                     results = strategyRunner.run(initialCapital);
+                    long baseEndNs = System.nanoTime();
+                    Duration baseDur = Duration.ofNanos(baseEndNs - baseStartNs);
+                    logger.info("Base strategy runtime: {} ms ({} s)", baseDur.toMillis(), String.format("%.3f", baseDur.toMillis() / 1000.0));
                 } catch (Exception e) {
                     throw new RuntimeException("Strategy parsing failed: " + e.getMessage());
                 }
@@ -201,7 +204,16 @@ public class BacktesterController {
             if (permutations > 0) {
                 Platform.runLater(() -> statusLabel.setText("Running Monte Carlo (" + permutations + ")..."));
                 MonteCarloRunner mcRunner = new MonteCarloRunner(lookbackBars, bars, strategyScript, logger);
-                MonteCarloResult mc = mcRunner.run(permutations, Math.min(4, permutations), initialCapital);
+                int threads = Math.min(4, permutations);
+                long mcStartNs = System.nanoTime();
+                MonteCarloResult mc = mcRunner.run(permutations, threads, initialCapital);
+                long mcEndNs = System.nanoTime();
+                Duration mcDur = Duration.ofNanos(mcEndNs - mcStartNs);
+                logger.info("Monte Carlo runtime: {} permutations in {} ms ({} s) using {} threads",
+                        permutations,
+                        mcDur.toMillis(),
+                        String.format("%.3f", mcDur.toMillis() / 1000.0),
+                        threads);
                 Platform.runLater(() -> {
                     if (mcTitleLabel != null) {
                         mcTitleLabel.setText("Monte Carlo Metrics");
@@ -235,15 +247,15 @@ public class BacktesterController {
             return false;
         }
 
-        if (strategyTextArea.getText().trim().isEmpty()) {
+        if (getStrategyScript().trim().isEmpty()) {
             showAlert("Invalid Input", "Cannot have an empty strategy");
             return false;
         }
 
         try {
             Parser parser = new Parser();
-            String s = strategyTextArea.getText().trim();
-            parser.parse(strategyTextArea.getText().trim());
+            String s = getStrategyScript().trim();
+            parser.parse(s);
         } catch (Exception e) {
             logger.error(e.getMessage());
             showAlert("Invalid Input", "Could not parse strategy. Error: " + e);
@@ -272,6 +284,11 @@ public class BacktesterController {
         }
 
         return true;
+    }
+
+    private String getStrategyScript() {
+        if (cmEditor != null) return cmEditor.getText();
+        return "";
     }
 
     private void updateResults(RunResult results, List<LocalDate> dates, List<Double> buyAndHold) {
@@ -367,3 +384,4 @@ public class BacktesterController {
         executorService.shutdown();
     }
 }
+

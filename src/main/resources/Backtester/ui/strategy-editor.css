@@ -1,8 +1,0 @@
-.code-area {
-  -fx-font-family: Consolas, "Courier New", monospace;
-  -fx-font-size: 12px;
-}
-
-.keyword { -fx-fill: #7c4dff; }
-.number  { -fx-fill: #d35400; }
-.string  { -fx-fill: #27ae60; }

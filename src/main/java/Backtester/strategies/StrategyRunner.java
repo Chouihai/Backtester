@@ -28,14 +28,12 @@ public class StrategyRunner {
 
     public RunResult run(double initialCapital) {
         int n = bars.size();
-        logger.info("Running strategy across " + n  + " cached bars");
         evaluator.evaluate(runContext); // This is necessary, can't remember why but not to be touched
         runContext.positionManager.setInitialCapital(initialCapital);
         for (int i = 0; i < n; i++) {
             Bar bar = bars.get(i);
             roll(bar);
         }
-        logger.info("Finished running strategy");
         PositionManager pm = runContext.positionManager;
         
         List<Double> equity = pm.getEquitySeries();

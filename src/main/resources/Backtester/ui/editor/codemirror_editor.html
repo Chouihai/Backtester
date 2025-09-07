@@ -1,0 +1,85 @@
+﻿<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Strategy Editor (CodeMirror)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/material-darker.min.css" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { background: #121826; color: #e0e6f1; }
+    #container { height: 100%; }
+    #editor { height: 100%; }
+    .CodeMirror { height: 100%; font-family: Consolas, Monaco, monospace; font-size: 12px; }
+    .fallback { height: 100%; width: 100%; resize: none; background: #121826; color: #e0e6f1; border: 1px solid #2a3441; font-family: Consolas, Monaco, monospace; font-size: 12px; padding: 8px; box-sizing: border-box; }
+    #status { position: absolute; top: 4px; right: 8px; font: 11px Arial; color: #8aa0b4; }
+  </style>
+</head>
+<body>
+  <div id="container" style="position:relative;">
+    <div id="status">Loading editor...</div>
+    <textarea id="editor" class="fallback"></textarea>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/addon/mode/simple.min.js"></script>
+  <script>
+    (function(){
+      function setupFallback(){
+        var ta = document.getElementById('editor');
+        ta.className = 'fallback';
+        window.setEditorText = function(t){ ta.value = String(t||''); };
+        window.getEditorText = function(){ return ta.value; };
+        var st = document.getElementById('status');
+        if (st) st.textContent = 'Basic editor active';
+      }
+
+      try {
+        if (window.CodeMirror && typeof CodeMirror.fromTextArea === 'function') {
+          if (window.CodeMirror.defineSimpleMode) {
+            var KW = /^(?:if|true|false)\b/;
+            var FN = /^(?:createOrder|sma|crossover|open|high|low|close|volume)\b/;
+            CodeMirror.defineSimpleMode('backtester', {
+              start: [
+                {regex: /\"(?:[^\\\"\\]|\\.)*\"/, token: 'string'},
+                {regex: /\d+(?:\.\d+)?/, token: 'number'},
+                {regex: FN, token: 'def', next: 'maybeCall'},
+                {regex: KW, token: 'keyword'},
+                {regex: /[A-Za-z_][A-Za-z0-9_]*/, token: 'variable'},
+                {regex: /#.*/, token: 'comment'}
+              ],
+              maybeCall: [
+                {regex: /\s*\(/, token: null, next: 'start'},
+                {regex: /./, token: null, next: 'start'}
+              ],
+              meta: { lineComment: '#' }
+            });
+          }
+          var ed = CodeMirror.fromTextArea(document.getElementById('editor'), {
+            mode: (window.CodeMirror.defineSimpleMode ? 'backtester' : undefined),
+            theme: 'material-darker',
+            lineNumbers: true,
+            matchBrackets: true,
+            indentUnit: 2,
+            indentWithTabs: false,
+            extraKeys: {
+              'Tab': function(cm){ cm.execCommand('indentMore'); },
+              'Shift-Tab': function(cm){ cm.execCommand('indentLess'); }
+            },
+            viewportMargin: Infinity
+          });
+          window.setEditorText = function(t){ ed.setValue(String(t||'')); };
+          window.getEditorText = function(){ return ed.getValue(); };
+          var st = document.getElementById('status');
+          if (st) st.textContent = '';
+        } else {
+          setupFallback();
+        }
+      } catch (e) {
+        setupFallback();
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -3,56 +3,54 @@
 <head>
   <meta charset="utf-8" />
   <title>Equity Chart</title>
-  <style>
+  <style>\n    body { background: #0e1117; color: #e0e6f1; }
     html, body, #container { height: 100%; margin: 0; }
     #container { position: relative; }
     #legend {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: rgba(255,255,255,0.85);
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font: 12px/1.2 Arial, sans-serif;
-      color: #333;
-      padding: 6px 8px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      z-index: 10; /* ensure it overlays the chart canvas */
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(20,23,31,0.85);
+      border: 1px solid #2a3441; border-radius: 4px;
+      font: 12px/1.2 Arial, sans-serif; color: #e0e6f1;
+      padding: 6px 8px; display: flex; gap: 10px; align-items: center;
+      z-index: 10;
     }
     .lg-item { display: flex; align-items: center; gap: 6px; }
-    .sw {
-      width: 10px; height: 10px; border-radius: 2px; display: inline-block;
-    }
-    .sw-strat { background: #27ae60; }
-    .sw-bh    { background: #3498db; }
-    .sw-mc    { background: #9b59b6; }
+    .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+    .sw-strat { background: #22ab94; }
+    .sw-bh    { background: #2962FF; }
+    .sw-mc    { background: #b084f5; }
+    .val { margin-left: 6px; color: #e0e6f1; font-weight: bold; opacity: 0.9; }
   </style>
   <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
   <div id="container">
     <div id="legend">
-      <span class="lg-item" id="lg-strat"><span class="sw sw-strat"></span>Strategy</span>
-      <span class="lg-item" id="lg-bh"><span class="sw sw-bh"></span>Buy & Hold</span>
-      <span class="lg-item" id="lg-mc"><span class="sw sw-mc"></span>MC Mean</span>
+      <span class="lg-item" id="lg-strat"><span class="sw sw-strat"></span>Strategy <span class="val" id="val-strat"></span></span>
+      <span class="lg-item" id="lg-bh"><span class="sw sw-bh"></span>Buy & Hold <span class="val" id="val-bh"></span></span>
+      <span class="lg-item" id="lg-mc"><span class="sw sw-mc"></span>MC Mean <span class="val" id="val-mc"></span></span>
     </div>
   </div>
   <script>
     // Safe stub so early calls won't fail
     window.__pendingPayload = null;
-    window.updateChart = function(payload){ window.__pendingPayload = payload; };
+    // Try to apply immediately; if chart not ready yet, stash it
+    window.updateChart = function(payload){
+      try { if (typeof applyPayload === 'function') { applyPayload(payload); window.__pendingPayload = null; }
+            else { window.__pendingPayload = payload; } }
+      catch(e){ window.__pendingPayload = payload; }
+    };
     const container = document.getElementById('container');
     const chart = LightweightCharts.createChart(container, {
-      layout: { background: { type: 'solid', color: '#ffffff' }, textColor: '#333' },
-      rightPriceScale: { borderVisible: false },
+      layout: { background: { type: 'solid', color: '#0e1117' }, textColor: '#e0e6f1' },
+      rightPriceScale: { borderVisible: false, textColor: '#8aa0b4' },
       timeScale: { borderVisible: false },
-      crosshair: { mode: 0 },
+      grid: { vertLines: { color: '#1f2630', style: 0, visible: true }, horzLines: { color: '#1f2630', style: 0, visible: true } },
+      crosshair: { mode: 0, vertLine: { color: '#2a3441', width: 1, style: 1 }, horzLine: { color: '#2a3441', width: 1, style: 1 } },
     });
-    const stratSeries = chart.addLineSeries({ color: '#27ae60', lineWidth: 2 });
-    const bhSeries = chart.addLineSeries({ color: '#3498db', lineWidth: 2 });
-    const mcMeanSeries = chart.addLineSeries({ color: '#9b59b6', lineWidth: 2 });
+    const stratSeries = chart.addAreaSeries({ topColor: 'rgba(34,171,148,0.35)', bottomColor: 'rgba(34,171,148,0.00)', lineColor: '#22ab94', lineWidth: 2, priceLineVisible: false });
+    const bhSeries = chart.addLineSeries({ color: '#2962FF', lineWidth: 2, priceLineVisible: false });
+    const mcMeanSeries = chart.addLineSeries({ color: '#b084f5', lineWidth: 2, priceLineVisible: false });
 
     function toBD(s){ const p=(s||'').split('-'); return { year:Number(p[0]), month:Number(p[1]), day:Number(p[2]) }; }
     function toSeriesData(dates, values) {
@@ -73,14 +71,53 @@
         if (hasBh) bhSeries.setData(toSeriesData(dates, payload.buyhold));
         if (hasMc) mcMeanSeries.setData(toSeriesData(dates, payload.mcMean));
 
-        document.getElementById('lg-strat').style.display = hasStrat ? 'flex' : 'none';
-        document.getElementById('lg-bh').style.display    = hasBh ? 'flex' : 'none';
-        document.getElementById('lg-mc').style.display    = hasMc ? 'flex' : 'none';
         chart.timeScale().fitContent();
       } catch (e) { console.error(e); }
     }
-    window.updateChart = function(payload){ applyPayload(payload); };
-    if (window.__pendingPayload){ applyPayload(window.__pendingPayload); window.__pendingPayload=null; }
+    // Apply any pending payload set before chart was ready
+    if (window.__pendingPayload) {
+      try { applyPayload(window.__pendingPayload); window.__pendingPayload = null; } catch(_) {}
+    }
+
+    // Resize chart to container
+    const ro = new ResizeObserver(entries => {
+      try {
+        const cr = entries[0].contentRect;
+        chart.resize(Math.max(0, Math.floor(cr.width)), Math.max(0, Math.floor(cr.height)));
+      } catch (_) {}
+    });
+    ro.observe(container);
+
+    // Legend values on crosshair
+    function fmtCurrency(v){
+      if (v == null || !isFinite(v)) return '';
+      try { return '$' + Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch (_) { return '$' + v; }
+    }
+    const elValStrat = document.getElementById('val-strat');
+    const elValBh = document.getElementById('val-bh');
+    const elValMc = document.getElementById('val-mc');
+    chart.subscribeCrosshairMove(param => {
+      if (!param || !param.point || !param.time) {
+        elValStrat.textContent = '';
+        elValBh.textContent = '';
+        elValMc.textContent = '';
+        return;
+      }
+      try {
+        const prices = param.seriesPrices || param.seriesData;
+        const getVal = (p, s) => { try { return p && p.get ? p.get(s) : undefined; } catch(_) { return undefined; } };
+        const vStrat = getVal(prices, stratSeries);
+        const vBh = getVal(prices, bhSeries);
+        const vMc = getVal(prices, mcMeanSeries);
+        elValStrat.textContent = vStrat != null ? fmtCurrency(vStrat) : '';
+        elValBh.textContent = vBh != null ? fmtCurrency(vBh) : '';
+        elValMc.textContent = vMc != null ? fmtCurrency(vMc) : '';
+      } catch (_) {
+        elValStrat.textContent = '';
+        elValBh.textContent = '';
+        elValMc.textContent = '';
+      }
+    });
   </script>
   </body>
   </html>
