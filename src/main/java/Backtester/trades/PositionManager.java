@@ -177,6 +177,51 @@ public class PositionManager {
         this.initialCapital = initialCapital;
     }
 
+    public List<Double> getEquitySeries() {
+        return new ArrayList<>(equitySeries);
+    }
+
+    public double annualizedVolatility() {
+        if (periodReturns.size() < 2) return Double.NaN;
+        double mean = periodReturns.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
+        double variance = 0.0;
+        for (double r : periodReturns) variance += Math.pow(r - mean, 2);
+        variance /= (periodReturns.size() - 1);
+        double std = Math.sqrt(variance);
+        return std * Math.sqrt(252.0);
+    }
+
+    public double sortinoRatio() {
+        if (periodReturns.isEmpty()) return Double.NaN;
+        double mean = periodReturns.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        List<Double> downs = new ArrayList<>();
+        for (double r : periodReturns) if (r < 0) downs.add(r);
+        if (downs.size() < 2) return Double.NaN;
+        double dmean = downs.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        double dvar = 0.0;
+        for (double r : downs) dvar += Math.pow(r - dmean, 2);
+        dvar /= (downs.size() - 1);
+        double downDev = Math.sqrt(dvar);
+        double annDownDev = downDev * Math.sqrt(252.0);
+        double annMean = mean * 252.0;
+        return (annDownDev > 0) ? (annMean / annDownDev) : Double.NaN;
+    }
+
+    public double cagr(double years) {
+        if (equitySeries.isEmpty() || years <= 0) return Double.NaN;
+        double start = initialCapital;
+        double end = equitySeries.get(equitySeries.size() - 1);
+        if (start <= 0) return Double.NaN;
+        return Math.pow(end / start, 1.0 / years) - 1.0;
+    }
+
+    public double calmar(double years) {
+        double cagr = cagr(years);
+        double dd = Math.abs(maxDrawdown());
+        if (Double.isNaN(cagr) || dd == 0.0) return Double.NaN;
+        return cagr / dd;
+    }
+
     private void updateEquityMetrics() {
         double realized = netProfit();
         double unrealized = openPnL();

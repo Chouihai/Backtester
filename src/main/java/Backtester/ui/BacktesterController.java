@@ -4,23 +4,24 @@ import Backtester.objects.Bar;
 import Backtester.objects.Trade;
 import Backtester.script.tokens.Parser;
 import Backtester.services.HistoricalDataService;
+import Backtester.strategies.MonteCarloResult;
+import Backtester.strategies.MonteCarloRunner;
 import Backtester.strategies.RunResult;
 import Backtester.strategies.StrategyRunner;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.fx.ChartViewer;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
@@ -31,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,21 +64,18 @@ public class BacktesterController {
     public Label maxDrawdownLabel;
     public Label maxRunUpLabel;
     public Label sharpeRatioLabel;
+    public Label tradesMadeLabel;
+    public Label winningTradesLabel;
     public ProgressBar progressBar;
     public Label statusLabel;
     public TextField permutationsField;
-    public TextField blockSizeField;
 
     // Monte Carlo output labels
-    public Label mcNetProfitLabel;
-    public Label mcMaxDrawdownLabel;
-    public Label mcSharpeLabel;
-    public Label mcEntriesLabel;
-    public Label mcOpenTradesLabel;
-    public Label mcClosedTradesLabel;
-    public Label mcWinnersLabel;
-    public Label mcLosersLabel;
+    public Label mcTitleLabel;
+    public TableView<MonteCarloMetricRow> mcMetricsTable;
+    public VBox mcPathsContainer;
     public Bar lastBar;
+    private List<LocalDate> lastDates;
 
     private ObservableList<Trade> tradesData = FXCollections.observableArrayList();
     private volatile boolean isRunning = false;
@@ -114,7 +111,6 @@ public class BacktesterController {
         }
         initialCapitalField.setText("100000");
         if (permutationsField != null) permutationsField.setText("100");
-        if (blockSizeField != null) blockSizeField.setText("10");
         tradesTable.setItems(tradesData);
         progressBar.setVisible(false);
         statusLabel.setText("Ready to run backtest");
@@ -196,15 +192,36 @@ public class BacktesterController {
                 }
             }
 
-            // Update UI with results
+            // Update UI with backtest results
             RunResult finalResults = results;
             Platform.runLater(() -> {
                 if (finalResults != null) {
                     updateResults(finalResults, dates, buyAndHoldEquity);
-                    statusLabel.setText("Backtest completed successfully");
-                    resetUI();
+                    statusLabel.setText("Backtest completed. Preparing Monte Carlo...");
                 }
             });
+
+            // Run Monte Carlo permutations (if requested)
+            int permutations = parseOrDefault(permutationsField != null ? permutationsField.getText() : "0", 0);
+            if (permutations > 0) {
+                Platform.runLater(() -> statusLabel.setText("Running Monte Carlo (" + permutations + ")..."));
+                MonteCarloRunner mcRunner = new MonteCarloRunner(lookbackBars, bars, strategyScript, logger);
+                MonteCarloResult mc = mcRunner.run(permutations, Math.min(4, permutations), initialCapital);
+                Platform.runLater(() -> {
+                    if (mcTitleLabel != null) {
+                        mcTitleLabel.setText("Monte Carlo Metrics");
+                    }
+                    updateMonteCarloResults(mc);
+                    updateMonteCarloPaths(mc);
+                    statusLabel.setText("Monte Carlo completed");
+                    resetUI();
+                });
+            } else {
+                Platform.runLater(() -> {
+                    statusLabel.setText("Backtest completed");
+                    resetUI();
+                });
+            }
         } catch (Exception e) {
             logger.error("Backtest failed", e);
             Platform.runLater(() -> {
@@ -272,6 +289,9 @@ public class BacktesterController {
         double sharpeRatio = results.sharpe();
         lastBar = results.lastBar();
 
+        int tradesMade = results.trades().size();
+        long winningTrades = results.trades().stream().filter(t -> t.isClosed() && t.profit() > 0).count();
+
         netProfitLabel.setText(formatCurrency(netProfit));
         setLabelColor(netProfitLabel, netProfit);
         
@@ -293,6 +313,10 @@ public class BacktesterController {
         sharpeRatioLabel.setText(formatDecimal(sharpeRatio));
         setLabelColor(sharpeRatioLabel, sharpeRatio);
 
+        if (tradesMadeLabel != null) tradesMadeLabel.setText(String.valueOf(tradesMade));
+        if (winningTradesLabel != null) winningTradesLabel.setText(String.valueOf(winningTrades));
+
+        this.lastDates = dates;
         updateChart(results, dates, buyAndHold);
     }
 
@@ -369,15 +393,119 @@ public class BacktesterController {
             lineRenderer.setSeriesStroke(1, new BasicStroke(2.0f));
         }
 
-        // Render chart to image to avoid SwingNode/module export issues
-        BufferedImage img = chart.createBufferedImage(1200, 320);
-        Image fxImage = SwingFXUtils.toFXImage(img, null);
-        ImageView imageView = new ImageView(fxImage);
-        imageView.setPreserveRatio(true);
-        // Fit inside fixed-height container and fill width
-        imageView.fitHeightProperty().bind(chartContainer.heightProperty());
-        imageView.fitWidthProperty().bind(chartContainer.widthProperty());
-        chartContainer.getChildren().add(imageView);
+        // Interactive viewer (zoom/pan)
+        plot.setDomainPannable(true);
+        plot.setRangePannable(true);
+        ChartViewer viewer = new ChartViewer(chart);
+        viewer.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        viewer.prefWidthProperty().bind(chartContainer.widthProperty());
+        viewer.prefHeightProperty().bind(chartContainer.heightProperty());
+        VBox.setVgrow(viewer, Priority.ALWAYS);
+        chartContainer.getChildren().setAll(viewer);
+    }
+
+    private void updateMonteCarloResults(MonteCarloResult mc) {
+        if (mcMetricsTable == null) return;
+        try {
+            List<MonteCarloMetricRow> rows = new ArrayList<>();
+
+            addMetricRow(rows, "Net Profit (Realized)", mc.getSummary("Net Profit"), true, false);
+            addMetricRow(rows, "Total PnL (Realized+Unrealized)", mc.getSummary("Total PnL (Realized+Unrealized)"), true, false);
+            addMetricRow(rows, "Max Drawdown", mc.getSummary("Max Drawdown"), false, true);
+            addMetricRow(rows, "Sharpe", mc.getSummary("Sharpe"), false, false);
+            addMetricRow(rows, "Sortino", mc.getSummary("Sortino"), false, false);
+            addMetricRow(rows, "Volatility", mc.getSummary("Volatility"), false, true);
+            addMetricRow(rows, "Trades", mc.getSummary("Trades"), false, false);
+            addMetricRow(rows, "CAGR", mc.getSummary("CAGR"), false, true);
+            addMetricRow(rows, "Calmar", mc.getSummary("Calmar"), false, false);
+
+            // Special rows
+            rows.add(new MonteCarloMetricRow("Prob. Loss", formatPercentage(mc.probLoss), "-", "-", "-", "-", "-"));
+            rows.add(new MonteCarloMetricRow("ES (5%) Net", formatCurrency(mc.expectedShortfall5), "-", "-", "-", "-", "-"));
+
+            mcMetricsTable.setItems(FXCollections.observableArrayList(rows));
+        } catch (Exception ex) {
+            logger.error("Failed to update MC metrics table", ex);
+        }
+    }
+
+    private void addMetricRow(List<MonteCarloMetricRow> rows, String name, Backtester.strategies.StatSummary s, boolean currency, boolean percent) {
+        if (s == null) return;
+        String fmtMean = currency ? formatCurrency(s.mean) : percent ? formatPercentage(s.mean) : formatDecimal(s.mean);
+        String fmtMedian = currency ? formatCurrency(s.median) : percent ? formatPercentage(s.median) : formatDecimal(s.median);
+        String fmtP5 = currency ? formatCurrency(s.p5) : percent ? formatPercentage(s.p5) : formatDecimal(s.p5);
+        String fmtP25 = currency ? formatCurrency(s.p25) : percent ? formatPercentage(s.p25) : formatDecimal(s.p25);
+        String fmtP75 = currency ? formatCurrency(s.p75) : percent ? formatPercentage(s.p75) : formatDecimal(s.p75);
+        String fmtP95 = currency ? formatCurrency(s.p95) : percent ? formatPercentage(s.p95) : formatDecimal(s.p95);
+        rows.add(new MonteCarloMetricRow(name, fmtMean, fmtMedian, fmtP5, fmtP25, fmtP75, fmtP95));
+    }
+
+    private void updateMonteCarloPaths(MonteCarloResult mc) {
+        if (mcPathsContainer == null || lastDates == null || lastDates.isEmpty()) return;
+        if (mc.eqMean == null || mc.eqMean.length == 0) return;
+
+        mcPathsContainer.getChildren().clear();
+
+        TimeSeriesCollection dataset = new TimeSeriesCollection();
+
+        TimeSeries mean = new TimeSeries("Mean Equity");
+        TimeSeries p5 = new TimeSeries("P5");
+        TimeSeries p25 = new TimeSeries("P25");
+        TimeSeries p50 = new TimeSeries("Median");
+        TimeSeries p75 = new TimeSeries("P75");
+        TimeSeries p95 = new TimeSeries("P95");
+
+        int len = Math.min(lastDates.size(), mc.eqMean.length);
+        for (int i = 0; i < len; i++) {
+            LocalDate dte = lastDates.get(i);
+            Day d = new Day(dte.getDayOfMonth(), dte.getMonthValue(), dte.getYear());
+            mean.addOrUpdate(d, mc.eqMean[i]);
+            p5.addOrUpdate(d, mc.eqP5[i]);
+            p25.addOrUpdate(d, mc.eqP25[i]);
+            p50.addOrUpdate(d, mc.eqP50[i]);
+            p75.addOrUpdate(d, mc.eqP75[i]);
+            p95.addOrUpdate(d, mc.eqP95[i]);
+        }
+
+        dataset.addSeries(mean);
+        dataset.addSeries(p5);
+        dataset.addSeries(p25);
+        dataset.addSeries(p50);
+        dataset.addSeries(p75);
+        dataset.addSeries(p95);
+
+        JFreeChart chart = ChartFactory.createTimeSeriesChart(
+                null,
+                "Date",
+                "Equity",
+                dataset,
+                true,
+                false,
+                false
+        );
+
+        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer(true, false);
+        XYPlot plot = chart.getXYPlot();
+        plot.setRenderer(renderer);
+
+        // Styling: mean bold, percentiles lighter
+        renderer.setSeriesPaint(0, new Color(33, 150, 243));
+        renderer.setSeriesStroke(0, new BasicStroke(2.0f));
+        Color light = new Color(33, 150, 243, 120);
+        for (int i = 1; i < dataset.getSeriesCount(); i++) {
+            renderer.setSeriesPaint(i, light);
+            renderer.setSeriesStroke(i, new BasicStroke(1.0f));
+        }
+
+        // Interactive viewer (zoom/pan)
+        plot.setDomainPannable(true);
+        plot.setRangePannable(true);
+        ChartViewer viewer = new ChartViewer(chart);
+        viewer.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        viewer.prefWidthProperty().bind(mcPathsContainer.widthProperty());
+        viewer.prefHeightProperty().bind(mcPathsContainer.heightProperty());
+        VBox.setVgrow(viewer, Priority.ALWAYS);
+        mcPathsContainer.getChildren().setAll(viewer);
     }
 
 //    private void updateMonteCarloResults(MonteCarloResult mc) {

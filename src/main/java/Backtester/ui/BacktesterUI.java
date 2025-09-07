@@ -35,18 +35,21 @@ public class BacktesterUI {
         // 4. Performance Metrics Section
         VBox performanceSection = createPerformanceSection();
         VBox mcSection = createMonteCarloSection();
+        VBox mcPathsSection = createMonteCarloPathsSection();
         
         // 5. Trade History Section
         VBox tradeHistorySection = createTradeHistorySection();
         
         // Add all sections to main layout
+        // Order sections so real-data stats and trades are grouped together
         mainLayout.getChildren().addAll(
             strategySection,
             inputSection,
             chartSection,
             performanceSection,
+            tradeHistorySection,
             mcSection,
-            tradeHistorySection
+            mcPathsSection
         );
         
         // Create scroll pane for the main layout
@@ -110,12 +113,7 @@ public class BacktesterUI {
         permutationsField.setPrefWidth(120);
         permutationsField.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
 
-        Label blockSizeLabel = new Label("Block Size:");
-        blockSizeLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
-        TextField blockSizeField = new TextField();
-        blockSizeField.setPromptText("e.g., 10");
-        blockSizeField.setPrefWidth(120);
-        blockSizeField.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+        // Block size removed (was used for bootstrap); Brownian bridge does not require it.
 
         // Control buttons
         Button runButton = new Button("Run Backtest");
@@ -151,8 +149,7 @@ public class BacktesterUI {
         
         grid.add(permutationsLabel, 0, 2);
         grid.add(permutationsField, 1, 2);
-        grid.add(blockSizeLabel, 2, 2);
-        grid.add(blockSizeField, 3, 2);
+        // Removed block size controls
 
         grid.add(buttonBox, 0, 3, 4, 1);
         
@@ -166,7 +163,7 @@ public class BacktesterUI {
         controller.progressBar = progressBar;
         controller.statusLabel = statusLabel;
         controller.permutationsField = permutationsField;
-        controller.blockSizeField = blockSizeField;
+        // Block size field removed
         
         section.getChildren().addAll(title, grid);
         return section;
@@ -282,7 +279,7 @@ public class BacktesterUI {
         // Label sharpeRatioValue = new Label("0.00 (0%)"); // TODO: Add percentage calculation
         sharpeRatioValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
 
-        // Add to grid (2 rows, 4 columns)
+        // Add to grid (now 3 rows)
         metricsGrid.add(netProfitLabel, 0, 0);
         metricsGrid.add(netProfitValue, 1, 0);
         metricsGrid.add(grossProfitLabel, 2, 0);
@@ -298,7 +295,21 @@ public class BacktesterUI {
         metricsGrid.add(maxRunUpValue, 3, 1);
         metricsGrid.add(sharpeRatioLabel, 4, 1);
         metricsGrid.add(sharpeRatioValue, 5, 1);
-        // Optionally leave columns 6,7 blank for symmetry
+
+        Label tradesMadeLabel = new Label("Trades Made:");
+        tradesMadeLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+        Label tradesMadeValue = new Label("0");
+        tradesMadeValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
+
+        Label winningTradesLabel = new Label("Winning Trades:");
+        winningTradesLabel.setStyle("-fx-text-fill: #333; -fx-font-weight: bold;");
+        Label winningTradesValue = new Label("0");
+        winningTradesValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #333;");
+
+        metricsGrid.add(tradesMadeLabel, 0, 2);
+        metricsGrid.add(tradesMadeValue, 1, 2);
+        metricsGrid.add(winningTradesLabel, 2, 2);
+        metricsGrid.add(winningTradesValue, 3, 2);
 
         // Connect to controller
         controller.netProfitLabel = netProfitValue;
@@ -308,6 +319,8 @@ public class BacktesterUI {
         controller.maxDrawdownLabel = maxDrawdownValue;
         controller.maxRunUpLabel = maxRunUpValue;
         controller.sharpeRatioLabel = sharpeRatioValue;
+        controller.tradesMadeLabel = tradesMadeValue;
+        controller.winningTradesLabel = winningTradesValue;
 
         section.getChildren().addAll(title, metricsGrid);
         return section;
@@ -318,60 +331,62 @@ public class BacktesterUI {
         section.setPadding(new Insets(10));
         section.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
 
-        Label title = new Label("Monte Carlo Averages");
+        Label title = new Label("Monte Carlo Metrics");
         title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333;");
 
-        GridPane grid = new GridPane();
-        grid.setHgap(20);
-        grid.setVgap(10);
-        grid.setAlignment(Pos.CENTER_LEFT);
+        // Build a table of metric summaries (Mean, Median, P5, P25, P75, P95)
+        TableView<MonteCarloMetricRow> table = new TableView<>();
+        table.setPrefHeight(200);
 
-        Label mcNetLbl = new Label("Avg Net Profit:");
-        Label mcNetVal = new Label("$0.00");
+        TableColumn<MonteCarloMetricRow, String> metricCol = new TableColumn<>("Metric");
+        metricCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("metric"));
+        metricCol.setPrefWidth(180);
 
-        Label mcDdLbl = new Label("Avg Max Drawdown:");
-        Label mcDdVal = new Label("0.00%");
+        TableColumn<MonteCarloMetricRow, String> meanCol = new TableColumn<>("Mean");
+        meanCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("mean"));
 
-        Label mcSharpeLbl = new Label("Avg Sharpe:");
-        Label mcSharpeVal = new Label("0.00");
+        TableColumn<MonteCarloMetricRow, String> medianCol = new TableColumn<>("Median");
+        medianCol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("median"));
 
-        Label mcEntriesLbl = new Label("Avg Entries:");
-        Label mcEntriesVal = new Label("0");
+        TableColumn<MonteCarloMetricRow, String> p5Col = new TableColumn<>("P5");
+        p5Col.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("p5"));
 
-        Label mcOpenLbl = new Label("Avg Open Trades:");
-        Label mcOpenVal = new Label("0");
+        TableColumn<MonteCarloMetricRow, String> p25Col = new TableColumn<>("P25");
+        p25Col.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("p25"));
 
-        Label mcClosedLbl = new Label("Avg Closed Trades:");
-        Label mcClosedVal = new Label("0");
+        TableColumn<MonteCarloMetricRow, String> p75Col = new TableColumn<>("P75");
+        p75Col.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("p75"));
 
-        Label mcWinnersLbl = new Label("Avg Winners:");
-        Label mcWinnersVal = new Label("0");
+        TableColumn<MonteCarloMetricRow, String> p95Col = new TableColumn<>("P95");
+        p95Col.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("p95"));
 
-        Label mcLosersLbl = new Label("Avg Losers:");
-        Label mcLosersVal = new Label("0");
+        table.getColumns().addAll(metricCol, meanCol, medianCol, p5Col, p25Col, p75Col, p95Col);
 
-        grid.add(mcNetLbl, 0, 0); grid.add(mcNetVal, 1, 0);
-        grid.add(mcDdLbl, 2, 0); grid.add(mcDdVal, 3, 0);
-        grid.add(mcSharpeLbl, 4, 0); grid.add(mcSharpeVal, 5, 0);
+        controller.mcTitleLabel = title;
+        controller.mcMetricsTable = table;
 
-        grid.add(mcEntriesLbl, 0, 1); grid.add(mcEntriesVal, 1, 1);
-        grid.add(mcOpenLbl, 2, 1); grid.add(mcOpenVal, 3, 1);
-        grid.add(mcClosedLbl, 4, 1); grid.add(mcClosedVal, 5, 1);
+        section.getChildren().addAll(title, table);
+        return section;
+    }
 
-        grid.add(mcWinnersLbl, 0, 2); grid.add(mcWinnersVal, 1, 2);
-        grid.add(mcLosersLbl, 2, 2); grid.add(mcLosersVal, 3, 2);
+    private VBox createMonteCarloPathsSection() {
+        VBox section = new VBox(10);
+        section.setPadding(new Insets(10));
+        section.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
 
-        // Wire labels to controller
-        controller.mcNetProfitLabel = mcNetVal;
-        controller.mcMaxDrawdownLabel = mcDdVal;
-        controller.mcSharpeLabel = mcSharpeVal;
-        controller.mcEntriesLabel = mcEntriesVal;
-        controller.mcOpenTradesLabel = mcOpenVal;
-        controller.mcClosedTradesLabel = mcClosedVal;
-        controller.mcWinnersLabel = mcWinnersVal;
-        controller.mcLosersLabel = mcLosersVal;
+        Label title = new Label("Monte Carlo Equity Bands");
+        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333;");
 
-        section.getChildren().addAll(title, grid);
+        VBox pathsContainer = new VBox();
+        pathsContainer.setMinHeight(300);
+        pathsContainer.setPrefHeight(300);
+        pathsContainer.setMaxHeight(300);
+        pathsContainer.setStyle("-fx-background-color: transparent;");
+        pathsContainer.setAlignment(Pos.CENTER);
+
+        controller.mcPathsContainer = pathsContainer;
+
+        section.getChildren().addAll(title, pathsContainer);
         return section;
     }
 

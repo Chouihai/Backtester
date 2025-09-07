@@ -30,19 +30,42 @@ public class StrategyRunner {
         int n = bars.size();
         logger.info("Running strategy across " + n  + " cached bars");
         evaluator.evaluate(runContext); // This is necessary, can't remember why but not to be touched
+        runContext.positionManager.setInitialCapital(initialCapital);
         for (int i = 0; i < n; i++) {
             Bar bar = bars.get(i);
             roll(bar);
-
-            double realized = runContext.positionManager.netProfit();
-            double unrealized = runContext.positionManager.openPnL();
-            double equity = initialCapital + realized + unrealized;
-            strategyEquity.add(equity);
         }
         logger.info("Finished running strategy");
         PositionManager pm = runContext.positionManager;
-        return new RunResult(pm.allTrades(), pm.netProfit(), pm.grossProfit(), pm.grossLoss(), pm.sharpeRatio(), pm.openPnL(), pm.maxDrawdown(),
-                pm.maxRunUp(), runContext.bars.getLast(), strategyEquity);
+        
+        List<Double> equity = pm.getEquitySeries();
+        strategyEquity.clear();
+        strategyEquity.addAll(equity);
+
+        double years = 0.0;
+        if (!bars.isEmpty()) {
+            var d0 = bars.get(0).date;
+            var dT = bars.get(bars.size() - 1).date;
+            long days = java.time.temporal.ChronoUnit.DAYS.between(d0, dT);
+            years = (days > 0) ? (days / 365.25) : (bars.size() / 252.0);
+        }
+
+        return new RunResult(
+                pm.allTrades(),
+                pm.netProfit(),
+                pm.grossProfit(),
+                pm.grossLoss(),
+                pm.sharpeRatio(),
+                pm.sortinoRatio(),
+                pm.annualizedVolatility(),
+                pm.cagr(years),
+                pm.calmar(years),
+                pm.openPnL(),
+                pm.maxDrawdown(),
+                pm.maxRunUp(),
+                runContext.bars.getLast(),
+                strategyEquity
+        );
     }
 
     /**
