@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Equity Chart</title>
+  <style>
+    html, body, #container { height: 100%; margin: 0; }
+    #container { position: relative; }
+    #legend {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255,255,255,0.85);
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font: 12px/1.2 Arial, sans-serif;
+      color: #333;
+      padding: 6px 8px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      z-index: 10; /* ensure it overlays the chart canvas */
+    }
+    .lg-item { display: flex; align-items: center; gap: 6px; }
+    .sw {
+      width: 10px; height: 10px; border-radius: 2px; display: inline-block;
+    }
+    .sw-strat { background: #27ae60; }
+    .sw-bh    { background: #3498db; }
+    .sw-mc    { background: #9b59b6; }
+  </style>
+  <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <div id="container">
+    <div id="legend">
+      <span class="lg-item" id="lg-strat"><span class="sw sw-strat"></span>Strategy</span>
+      <span class="lg-item" id="lg-bh"><span class="sw sw-bh"></span>Buy & Hold</span>
+      <span class="lg-item" id="lg-mc"><span class="sw sw-mc"></span>MC Mean</span>
+    </div>
+  </div>
+  <script>
+    // Safe stub so early calls won't fail
+    window.__pendingPayload = null;
+    window.updateChart = function(payload){ window.__pendingPayload = payload; };
+    const container = document.getElementById('container');
+    const chart = LightweightCharts.createChart(container, {
+      layout: { background: { type: 'solid', color: '#ffffff' }, textColor: '#333' },
+      rightPriceScale: { borderVisible: false },
+      timeScale: { borderVisible: false },
+      crosshair: { mode: 0 },
+    });
+    const stratSeries = chart.addLineSeries({ color: '#27ae60', lineWidth: 2 });
+    const bhSeries = chart.addLineSeries({ color: '#3498db', lineWidth: 2 });
+    const mcMeanSeries = chart.addLineSeries({ color: '#9b59b6', lineWidth: 2 });
+
+    function toBD(s){ const p=(s||'').split('-'); return { year:Number(p[0]), month:Number(p[1]), day:Number(p[2]) }; }
+    function toSeriesData(dates, values) {
+      const len = Math.min(dates.length, values.length);
+      const out = new Array(len);
+      for (let i = 0; i < len; i++) out[i] = { time: toBD(dates[i]), value: Number(values[i]) };
+      return out;
+    }
+
+    function applyPayload(payload) {
+      try {
+        const dates = payload.dates || [];
+        const hasStrat = Array.isArray(payload.strategy) && payload.strategy.length > 0;
+        const hasBh = Array.isArray(payload.buyhold) && payload.buyhold.length > 0;
+        const hasMc = Array.isArray(payload.mcMean) && payload.mcMean.length > 0;
+
+        if (hasStrat) stratSeries.setData(toSeriesData(dates, payload.strategy));
+        if (hasBh) bhSeries.setData(toSeriesData(dates, payload.buyhold));
+        if (hasMc) mcMeanSeries.setData(toSeriesData(dates, payload.mcMean));
+
+        document.getElementById('lg-strat').style.display = hasStrat ? 'flex' : 'none';
+        document.getElementById('lg-bh').style.display    = hasBh ? 'flex' : 'none';
+        document.getElementById('lg-mc').style.display    = hasMc ? 'flex' : 'none';
+        chart.timeScale().fitContent();
+      } catch (e) { console.error(e); }
+    }
+    window.updateChart = function(payload){ applyPayload(payload); };
+    if (window.__pendingPayload){ applyPayload(window.__pendingPayload); window.__pendingPayload=null; }
+  </script>
+  </body>
+  </html>

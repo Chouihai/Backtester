@@ -12,26 +12,12 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
 import javafx.scene.control.*;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.fx.ChartViewer;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYItemRenderer;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.time.Day;
-import org.jfree.data.time.TimeSeries;
-import org.jfree.data.time.TimeSeriesCollection;
+import javafx.scene.web.WebView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,10 +56,12 @@ public class BacktesterController {
     public Label statusLabel;
     public TextField permutationsField;
 
-    // Monte Carlo output labels
     public Label mcTitleLabel;
     public TableView<MonteCarloMetricRow> mcMetricsTable;
-    public VBox mcPathsContainer;
+
+    private ChartManager chartManager;
+    private MonteCarloMetricsTable mcTable;
+    private WebView equityWebView;
     public Bar lastBar;
     private List<LocalDate> lastDates;
 
@@ -115,6 +103,13 @@ public class BacktesterController {
         progressBar.setVisible(false);
         statusLabel.setText("Ready to run backtest");
         stopButton.setDisable(true);
+
+        // Initialize managers
+        equityWebView = new WebView();
+        chartManager = new ChartManager(equityWebView, chartContainer, statusLabel);
+        if (mcMetricsTable != null) {
+            mcTable = new MonteCarloMetricsTable(mcMetricsTable);
+        }
     }
 
     private void setupEventHandlers() {
@@ -212,7 +207,10 @@ public class BacktesterController {
                         mcTitleLabel.setText("Monte Carlo Metrics");
                     }
                     updateMonteCarloResults(mc);
-                    updateMonteCarloPaths(mc);
+                    // Overlay MC mean on the main equity chart
+                    if (chartManager != null) {
+                        chartManager.overlayMonteCarlo(mc, lastDates, null, buyAndHoldEquity);
+                    }
                     statusLabel.setText("Monte Carlo completed");
                     resetUI();
                 });
@@ -292,50 +290,32 @@ public class BacktesterController {
         int tradesMade = results.trades().size();
         long winningTrades = results.trades().stream().filter(t -> t.isClosed() && t.profit() > 0).count();
 
-        netProfitLabel.setText(formatCurrency(netProfit));
-        setLabelColor(netProfitLabel, netProfit);
+        netProfitLabel.setText(UiFormat.formatCurrency(netProfit));
+        UiFormat.setLabelColor(netProfitLabel, netProfit);
         
-        grossProfitLabel.setText(formatCurrency(grossProfit));
+        grossProfitLabel.setText(UiFormat.formatCurrency(grossProfit));
         grossProfitLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #27ae60;"); // Always green
         
-        grossLossLabel.setText(formatCurrency(grossLoss));
+        grossLossLabel.setText(UiFormat.formatCurrency(grossLoss));
         grossLossLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #e74c3c;"); // Always red
         
-        openPnLLabel.setText(formatCurrency(openPnL));
-        setLabelColor(openPnLLabel, openPnL);
+        openPnLLabel.setText(UiFormat.formatCurrency(openPnL));
+        UiFormat.setLabelColor(openPnLLabel, openPnL);
         
-        maxDrawdownLabel.setText(formatPercentage(maxDrawdown));
-        setLabelColor(maxDrawdownLabel, maxDrawdown);
+        maxDrawdownLabel.setText(UiFormat.formatPercentage(maxDrawdown));
+        UiFormat.setLabelColor(maxDrawdownLabel, maxDrawdown);
         
-        maxRunUpLabel.setText(formatPercentage(maxRunUp));
-        setLabelColor(maxRunUpLabel, maxRunUp);
+        maxRunUpLabel.setText(UiFormat.formatPercentage(maxRunUp));
+        UiFormat.setLabelColor(maxRunUpLabel, maxRunUp);
         
-        sharpeRatioLabel.setText(formatDecimal(sharpeRatio));
-        setLabelColor(sharpeRatioLabel, sharpeRatio);
+        sharpeRatioLabel.setText(UiFormat.formatDecimal(sharpeRatio));
+        UiFormat.setLabelColor(sharpeRatioLabel, sharpeRatio);
 
         if (tradesMadeLabel != null) tradesMadeLabel.setText(String.valueOf(tradesMade));
         if (winningTradesLabel != null) winningTradesLabel.setText(String.valueOf(winningTrades));
 
         this.lastDates = dates;
         updateChart(results, dates, buyAndHold);
-    }
-
-    private String formatCurrency(double value) {
-        return String.format("$%,.2f", value);
-    }
-
-    private String formatPercentage(double value) {
-        if (Double.isNaN(value)) {
-            return "0.00%";
-        }
-        return String.format("%.2f%%", value * 100);
-    }
-
-    private String formatDecimal(double value) {
-        if (Double.isNaN(value)) {
-            return "0.00";
-        }
-        return String.format("%.2f", value);
     }
 
     private int parseOrDefault(String text, int def) {
@@ -347,187 +327,17 @@ public class BacktesterController {
     }
 
     private void updateChart(RunResult result, List<LocalDate> dates, List<Double> buyAndHold) {
-        if (chartContainer == null) return;
-        chartContainer.getChildren().clear();
-
+        if (chartManager == null) return;
         var strat = result.strategyEquity();
-
-        if (dates.isEmpty() || strat.isEmpty() || buyAndHold.isEmpty()) {
-            Label chartLabel = new Label("No equity data. Run a backtest.");
-            chartLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");
-            chartContainer.getChildren().add(chartLabel);
-            return;
-        }
-
-        TimeSeries strategySeries = new TimeSeries("Strategy");
-        TimeSeries bhSeries = new TimeSeries("Buy & Hold");
-        for (int i = 0; i < dates.size(); i++) {
-            LocalDate d = dates.get(i);
-            Day day = new Day(d.getDayOfMonth(), d.getMonthValue(), d.getYear());
-            strategySeries.add(day, strat.get(i));
-            bhSeries.add(day, buyAndHold.get(i));
-        }
-        TimeSeriesCollection dataset = new TimeSeriesCollection();
-        dataset.addSeries(strategySeries);
-        dataset.addSeries(bhSeries);
-
-        // No internal chart title; the section already has a title
-        JFreeChart chart = ChartFactory.createTimeSeriesChart(
-                null,
-                "Date",
-                "Equity ($)",
-                dataset,
-                true,
-                true,
-                false
-        );
-
-        // Some basic styling
-        XYPlot plot = chart.getXYPlot();
-        XYItemRenderer renderer = plot.getRenderer();
-        if (renderer instanceof XYLineAndShapeRenderer lineRenderer) {
-            lineRenderer.setDefaultShapesVisible(false);
-            lineRenderer.setSeriesPaint(0, new Color(39, 174, 96));
-            lineRenderer.setSeriesPaint(1, new Color(52, 152, 219));
-            lineRenderer.setSeriesStroke(0, new BasicStroke(2.0f));
-            lineRenderer.setSeriesStroke(1, new BasicStroke(2.0f));
-        }
-
-        // Interactive viewer (zoom/pan)
-        plot.setDomainPannable(true);
-        plot.setRangePannable(true);
-        ChartViewer viewer = new ChartViewer(chart);
-        viewer.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-        viewer.prefWidthProperty().bind(chartContainer.widthProperty());
-        viewer.prefHeightProperty().bind(chartContainer.heightProperty());
-        VBox.setVgrow(viewer, Priority.ALWAYS);
-        chartContainer.getChildren().setAll(viewer);
+        chartManager.updateEquity(dates, strat, buyAndHold);
     }
 
     private void updateMonteCarloResults(MonteCarloResult mc) {
-        if (mcMetricsTable == null) return;
+        if (mcTable == null) return;
         try {
-            List<MonteCarloMetricRow> rows = new ArrayList<>();
-
-            addMetricRow(rows, "Net Profit (Realized)", mc.getSummary("Net Profit"), true, false);
-            addMetricRow(rows, "Total PnL (Realized+Unrealized)", mc.getSummary("Total PnL (Realized+Unrealized)"), true, false);
-            addMetricRow(rows, "Max Drawdown", mc.getSummary("Max Drawdown"), false, true);
-            addMetricRow(rows, "Sharpe", mc.getSummary("Sharpe"), false, false);
-            addMetricRow(rows, "Sortino", mc.getSummary("Sortino"), false, false);
-            addMetricRow(rows, "Volatility", mc.getSummary("Volatility"), false, true);
-            addMetricRow(rows, "Trades", mc.getSummary("Trades"), false, false);
-            addMetricRow(rows, "CAGR", mc.getSummary("CAGR"), false, true);
-            addMetricRow(rows, "Calmar", mc.getSummary("Calmar"), false, false);
-
-            // Special rows
-            rows.add(new MonteCarloMetricRow("Prob. Loss", formatPercentage(mc.probLoss), "-", "-", "-", "-", "-"));
-            rows.add(new MonteCarloMetricRow("ES (5%) Net", formatCurrency(mc.expectedShortfall5), "-", "-", "-", "-", "-"));
-
-            mcMetricsTable.setItems(FXCollections.observableArrayList(rows));
+            mcTable.populate(mc);
         } catch (Exception ex) {
             logger.error("Failed to update MC metrics table", ex);
-        }
-    }
-
-    private void addMetricRow(List<MonteCarloMetricRow> rows, String name, Backtester.strategies.StatSummary s, boolean currency, boolean percent) {
-        if (s == null) return;
-        String fmtMean = currency ? formatCurrency(s.mean) : percent ? formatPercentage(s.mean) : formatDecimal(s.mean);
-        String fmtMedian = currency ? formatCurrency(s.median) : percent ? formatPercentage(s.median) : formatDecimal(s.median);
-        String fmtP5 = currency ? formatCurrency(s.p5) : percent ? formatPercentage(s.p5) : formatDecimal(s.p5);
-        String fmtP25 = currency ? formatCurrency(s.p25) : percent ? formatPercentage(s.p25) : formatDecimal(s.p25);
-        String fmtP75 = currency ? formatCurrency(s.p75) : percent ? formatPercentage(s.p75) : formatDecimal(s.p75);
-        String fmtP95 = currency ? formatCurrency(s.p95) : percent ? formatPercentage(s.p95) : formatDecimal(s.p95);
-        rows.add(new MonteCarloMetricRow(name, fmtMean, fmtMedian, fmtP5, fmtP25, fmtP75, fmtP95));
-    }
-
-    private void updateMonteCarloPaths(MonteCarloResult mc) {
-        if (mcPathsContainer == null || lastDates == null || lastDates.isEmpty()) return;
-        if (mc.eqMean == null || mc.eqMean.length == 0) return;
-
-        mcPathsContainer.getChildren().clear();
-
-        TimeSeriesCollection dataset = new TimeSeriesCollection();
-
-        TimeSeries mean = new TimeSeries("Mean Equity");
-        TimeSeries p5 = new TimeSeries("P5");
-        TimeSeries p25 = new TimeSeries("P25");
-        TimeSeries p50 = new TimeSeries("Median");
-        TimeSeries p75 = new TimeSeries("P75");
-        TimeSeries p95 = new TimeSeries("P95");
-
-        int len = Math.min(lastDates.size(), mc.eqMean.length);
-        for (int i = 0; i < len; i++) {
-            LocalDate dte = lastDates.get(i);
-            Day d = new Day(dte.getDayOfMonth(), dte.getMonthValue(), dte.getYear());
-            mean.addOrUpdate(d, mc.eqMean[i]);
-            p5.addOrUpdate(d, mc.eqP5[i]);
-            p25.addOrUpdate(d, mc.eqP25[i]);
-            p50.addOrUpdate(d, mc.eqP50[i]);
-            p75.addOrUpdate(d, mc.eqP75[i]);
-            p95.addOrUpdate(d, mc.eqP95[i]);
-        }
-
-        dataset.addSeries(mean);
-        dataset.addSeries(p5);
-        dataset.addSeries(p25);
-        dataset.addSeries(p50);
-        dataset.addSeries(p75);
-        dataset.addSeries(p95);
-
-        JFreeChart chart = ChartFactory.createTimeSeriesChart(
-                null,
-                "Date",
-                "Equity",
-                dataset,
-                true,
-                false,
-                false
-        );
-
-        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer(true, false);
-        XYPlot plot = chart.getXYPlot();
-        plot.setRenderer(renderer);
-
-        // Styling: mean bold, percentiles lighter
-        renderer.setSeriesPaint(0, new Color(33, 150, 243));
-        renderer.setSeriesStroke(0, new BasicStroke(2.0f));
-        Color light = new Color(33, 150, 243, 120);
-        for (int i = 1; i < dataset.getSeriesCount(); i++) {
-            renderer.setSeriesPaint(i, light);
-            renderer.setSeriesStroke(i, new BasicStroke(1.0f));
-        }
-
-        // Interactive viewer (zoom/pan)
-        plot.setDomainPannable(true);
-        plot.setRangePannable(true);
-        ChartViewer viewer = new ChartViewer(chart);
-        viewer.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-        viewer.prefWidthProperty().bind(mcPathsContainer.widthProperty());
-        viewer.prefHeightProperty().bind(mcPathsContainer.heightProperty());
-        VBox.setVgrow(viewer, Priority.ALWAYS);
-        mcPathsContainer.getChildren().setAll(viewer);
-    }
-
-//    private void updateMonteCarloResults(MonteCarloResult mc) {
-//        if (mcNetProfitLabel != null) mcNetProfitLabel.setText(formatCurrency(mc.avgNetProfit));
-//        if (mcMaxDrawdownLabel != null) mcMaxDrawdownLabel.setText(formatPercentage(mc.avgMaxDrawdown));
-//        if (mcSharpeLabel != null) mcSharpeLabel.setText(formatDecimal(mc.avgSharpe));
-//        if (mcEntriesLabel != null) mcEntriesLabel.setText(String.valueOf(Math.round(mc.avgEntries)));
-//        if (mcOpenTradesLabel != null) mcOpenTradesLabel.setText(String.valueOf(Math.round(mc.avgOpenTrades)));
-//        if (mcClosedTradesLabel != null) mcClosedTradesLabel.setText(String.valueOf(Math.round(mc.avgClosedTrades)));
-//        if (mcWinnersLabel != null) mcWinnersLabel.setText(String.valueOf(Math.round(mc.avgWinners)));
-//        if (mcLosersLabel != null) mcLosersLabel.setText(String.valueOf(Math.round(mc.avgLosers)));
-//    }
-
-    private void setLabelColor(Label label, double value) {
-        if (Double.isNaN(value)) {
-            label.setStyle("-fx-font-size: 14px; -fx-text-fill: #333;");
-        } else if (value > 0) {
-            label.setStyle("-fx-font-size: 14px; -fx-text-fill: #27ae60;");
-        } else if (value < 0) {
-            label.setStyle("-fx-font-size: 14px; -fx-text-fill: #e74c3c;");
-        } else {
-            label.setStyle("-fx-font-size: 14px; -fx-text-fill: #333;");
         }
     }
 

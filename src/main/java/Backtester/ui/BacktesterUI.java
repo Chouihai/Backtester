@@ -35,7 +35,6 @@ public class BacktesterUI {
         // 4. Performance Metrics Section
         VBox performanceSection = createPerformanceSection();
         VBox mcSection = createMonteCarloSection();
-        VBox mcPathsSection = createMonteCarloPathsSection();
         
         // 5. Trade History Section
         VBox tradeHistorySection = createTradeHistorySection();
@@ -48,8 +47,7 @@ public class BacktesterUI {
             chartSection,
             performanceSection,
             tradeHistorySection,
-            mcSection,
-            mcPathsSection
+            mcSection
         );
         
         // Create scroll pane for the main layout
@@ -369,26 +367,7 @@ public class BacktesterUI {
         return section;
     }
 
-    private VBox createMonteCarloPathsSection() {
-        VBox section = new VBox(10);
-        section.setPadding(new Insets(10));
-        section.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;");
-
-        Label title = new Label("Monte Carlo Equity Bands");
-        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333;");
-
-        VBox pathsContainer = new VBox();
-        pathsContainer.setMinHeight(300);
-        pathsContainer.setPrefHeight(300);
-        pathsContainer.setMaxHeight(300);
-        pathsContainer.setStyle("-fx-background-color: transparent;");
-        pathsContainer.setAlignment(Pos.CENTER);
-
-        controller.mcPathsContainer = pathsContainer;
-
-        section.getChildren().addAll(title, pathsContainer);
-        return section;
-    }
+    // Removed Monte Carlo bands section (single chart retained)
 
     private VBox createTradeHistorySection() {
         VBox section = new VBox(10);
