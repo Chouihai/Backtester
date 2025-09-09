@@ -2,16 +2,20 @@
 
 A JavaFX-based stock trading strategy backtester application that allows you to write and test trading strategies using a custom scripting language.
 
+<img width="1218" height="896" alt="image" src="https://github.com/user-attachments/assets/c0bdf63c-fb9e-487a-bce0-47d91db74f16" />
+
 ## Overview
 
-This application provides a graphical interface for backtesting stock trading strategies. It features:
+This application provides a graphical interface for backtesting stock trading strategies on historical data as well as on randomized permutations of the same data. 
 
-- **Custom Scripting Language**: Write trading strategies using a simple, Python-like syntax
+
+It features:
+
+- **Custom Scripting Language**: Write trading strategies using a simple syntax
 - **Flexible Data Sources**: Fetch historical data from Alpha Vantage API or use local JSON files
 - **Performance Metrics**: Track profit/loss, drawdown, run-up, and Sharpe ratio
-- **Trade Management**: Visualize trades and positions with detailed analytics
-- **Configuration Management**: Flexible configuration for data sources and API keys
-
+- **High Quality Charts**: Utilizes high end chart plotting libraries
+  
 ## Prerequisites
 
 - **Java 22** (or later)
@@ -118,7 +122,7 @@ Creates a new trading order with optional order type and pricing.
   - `createOrder("Limit Buy", true, 500, 95.0)` - Buy limit order at $95
   - `createOrder("Stop Loss", false, 1000, null, 90.0)` - Sell stop order at $90
 
-#### `close([lookback])`
+#### `close([lookback]), open([lookback]), high([lookback]), low([lookback]), volume([lookback])`
 Accesses the close price from bars.
 - **Arguments**: 0-1 (optional lookback period)
 - **Returns**: ValueAccumulator object
@@ -127,68 +131,6 @@ Accesses the close price from bars.
     - `close()` - current bar's close price
     - `close(1)` - previous bar's close price
     - `close(5)` - close price from 5 bars ago
-
-#### `open([lookback])`
-Accesses the open price from bars.
-- **Arguments**: 0-1 (optional lookback period)
-- **Returns**: ValueAccumulator object
-- **Examples**:
-    - `open()` - current bar's open price
-    - `open(1)` - previous bar's open price
-
-#### `high([lookback])`
-Accesses the high price from bars.
-- **Arguments**: 0-1 (optional lookback period)
-- **Returns**: ValueAccumulator object
-- **Examples**:
-    - `high()` - current bar's high price
-    - `high(1)` - previous bar's high price
-
-#### `low([lookback])`
-Accesses the low price from bars.
-- **Arguments**: 0-1 (optional lookback period)
-- **Returns**: ValueAccumulator object
-- **Examples**:
-    - `low()` - current bar's low price
-    - `low(1)` - previous bar's low price
-
-#### `volume([lookback])`
-Accesses the volume from bars.
-- **Arguments**: 0-1 (optional lookback period)
-- **Returns**: ValueAccumulator object
-- **Examples**:
-    - `volume()` - current bar's volume
-    - `volume(1)` - previous bar's volume
-
-[//]: # (#### `closeOrder&#40;orderId&#41;`)
-
-[//]: # (Closes an existing order.)
-
-[//]: # (- **Arguments**: 1 &#40;order ID&#41;)
-
-[//]: # (- **Returns**: void)
-
-[//]: # (- **Example**: `closeOrder&#40;"position1"&#41;`)
-
-### Complete Strategy Example
-
-```python
-sma20 = sma(20)
-sma50 = sma(50)
-
-if crossover(sma20, sma50):
-    createOrder("Golden Cross Long", true, 1000)
-
-if crossover(sma50, sma20):
-    createOrder("Death Cross Short", false, 1000)
-
-# Example with limit and stop orders
-if close() < low(1):
-    createOrder("Limit Buy", true, 500, "LIMIT", close() * 0.95)  # Buy at 5% below current price
-
-if close() > high(1):
-    createOrder("Stop Loss", false, 1000, "STOP", 0, close() * 0.90)  # Stop loss at 10% below current price
-```
 
 ## Configuration Options
 
@@ -245,12 +187,11 @@ The application tracks several key performance indicators:
 - **Gross Loss**: Total loss from losing trades
 - **Net Profit**: Gross profit minus gross loss
 - **Open P&L**: Current unrealized profit/loss
+- **Drawdown**: Maximum peak-to-trough decline
+- **Run-up**: Maximum trough-to-peak gain
+- **Sharpe Ratio**: Risk-adjusted return measure
 
-[//]: # (- **Drawdown**: Maximum peak-to-trough decline)
-
-[//]: # (- **Run-up**: Maximum trough-to-peak gain)
-
-[//]: # (- **Sharpe Ratio**: Risk-adjusted return measure)
+<img width="1218" height="896" alt="image" src="https://github.com/user-attachments/assets/9c1f558a-6e7d-40bb-ba31-def4f74fb375" />
 
 ## Troubleshooting
 
